@@ -1,0 +1,329 @@
+---
+title: "Examining Distribution of Shellfish Pathogen Data"
+output: html_notebook
+---
+# Introduction
+As part of exploratory data analysis, and specifically to provide insight into how best to handle non-detects and censored values, we want to understand the distribution of observations in the E. COli shellfish bacteria data.  Here we take a look at overall data distributions, to consider possible modeling strategies. Since the data distribution may also be shaped by the distribution of predictors, this analysis is exploratory only, and any distributional assumptions need to be confirmed in the model context.
+
+# Load Libraries
+```{r}
+library(readr)
+library(fitdistrplus)
+library(maxLik)
+library(actuar)
+library(tidyverse)
+```
+
+# Load Data
+```{r}
+sibfldnm <- 'Derived Data'
+parent <- dirname(getwd())
+sibling <- file.path(parent,sibfldnm)
+fl1<- "Shellfish data 2015 2018.csv"
+path <- file.path(sibling, fl1)
+
+coli_data <- read_csv(path, 
+    col_types = cols(SDate = col_date(format = "%Y-%m-%d"), 
+        SDateTime = col_datetime(format = "%Y-%m-%d %H:%M:%S"), 
+        STime = col_time(format = "%H:%M:%S"))) %>%
+  mutate_at(c(4:8), factor) %>%
+  mutate(Class = factor(Class, levels = c( 'A', 'CA', 'CR',
+                                           'R', 'P', 'X' ))) %>%
+  mutate(Tide = factor(Tide, levels = c("L", "LF", "F", "HF",
+                                        "H", "HE", "E", "LE")))
+```
+
+# Data Structure
+```{r}
+with(coli_data, length(ColiVal))
+with(coli_data, sum(is.na(ColiVal)))
+```
+what does it mean to have missing values in this context?  That is not entirely clear, but these appear to be samples that are recorded with all site informaiton, but no sample-related information, so my guess is, these represent samples that were scheduled bun not actually collected.
+
+That suggests we should simply drop these rows as uninformative.  We hold off on doing that for now, as we want to explore the structure of the data.
+# Exploratory Graphics
+```{r}
+ggplot(coli_data, aes(SDateTime, ColiVal)) + geom_point(aes(color=LCFlag | RCFlag)) +
+  scale_y_log10()
+```
+This shows us:
+1.  The discrete of values observed
+2. The importance of censoring
+3. Possible coding errors where censored values were perhaps not consistently coded in the original data.
+4. Data is highly skewed, so that even the log of the data remains skewed.  A lognormal density is not appropriate for these data.
+
+We need to return to how we interpreted the raw data, in particular understanding how we ended up with nominal uncensored values at the censored value of 1.9 and 2.0 
+
+That may reflect the way we determined whether a sample was censored -- by looking for a less than sign ("<") in the original data.  I could have alternatively looked at whether theraw col and coliscore values were identical.
+
+So lets go to the the trouble of reshaping our data the way we really want.
+```{r}
+coli_data %>%
+  filter(! is.na(ColiVal)) %>%
+  group_by(GROW_AREA, YEAR) %>%
+  summarize(gmColi = 10^(mean(log10(ColiVal)))) %>%
+  ggplot(aes(YEAR, gmColi, color=GROW_AREA)) + geom_line(lwd=2)
+```
+So, geometric means vary year to year and Growing Area to Growing Area.  WE obvioulsly need indications of variability  to raw any conclusions, but this pints in useful directions.
+
+# Dealing with Skewed Data
+The data is so highly skewed that even the logs are skewed, which suggests we may have a hard time finding a parametric way of analyzing these data. 
+
+Given the non-detects and censored upper values, we can consider 
+1. Fitting data to a parametric family of distributions, accounting for censoring
+2. Robust or resistant statistical methods
+3. Non-parametric methods 
+
+Lets look at some histograms and distributions to generate insight into modeling choices.
+
+We start with some histograms.  First, a histogram of the log of the E. coli numbers. 
+```{r}
+ggplot(coli_data, aes(log10(ColiVal))) + geom_histogram(aes(color=RCFlag | LCFlag), bins = 100)
+```
+And then a log-log histogram. A Pareto random variable produces a linear relation on in a log-log histogram. 
+```{r}
+ggplot(coli_data, aes(ColiVal)) + geom_histogram(aes(color=RCFlag | LCFlag), bins = 100) +
+  scale_x_log10() + scale_y_log10()
+```
+As suggested before, this is a strongly skewed, heavy-tailed distribution.  So, Gamma, Exponential, and perhaps Pareto distributions might work.
+
+## Gamma Distribution
+Gamma can be fit by the method of moments, with parameters Shape = α and Scale = θ.  The mean and variance are as follows:
+$μ=αθ$
+$σ^2=αθ^2$
+
+The estimates of the parameters therefore are:
+$θ=σ^2/μ$
+$α=μ/θ=μ^2/σ^2$
+
+The empirical moments are:
+```{r}
+(a <- with(coli_data, list(mean=mean(ColiVal, na.rm=TRUE), var=var(ColiVal, na.rm=TRUE))))
+```
+So, by the method of moments, we can examine a gamma distribution with the following parameters:
+```{r}
+(theta = a$var/a$mean)
+(alpha = a$mean/theta)
+```
+```{r}
+tmp <- tibble(x=seq(0.01,50,0.01), y=dgamma(seq(0.01,50,0.01),shape=alpha, scale=theta))
+ggplot(tmp, aes(x,y)) + geom_line() + scale_x_log10() +
+  geom_density(data = coli_data, mapping=aes(x=ColiVal, y=..density..), bw=.1)
+```
+That certainly looks linear on a log-log plot, but the probability dnesity is al lbelw x=1, while the data we have has more of the density at higher values.
+
+# Pareto distribution
+The Pareto distribution is an extreme value distribution.  It is a two parameter family, with Scale and Shape parameters, both must be positive.
+
+The Pareto Distribution ends up looking linear on a log-log plot, suggesting this may be a good bet for the bacteria data, which looks similar (if you ignore censoring).
+
+This can be fit a couple of different ways.  First and second moments have relatively simple closed form values, so parameters could be estimated using either the method of mopments, or maximum likelihood methods.
+
+Some comments on closed-form maximum likelihood estimates based on sample moments can be found here:
+https://stats.stackexchange.com/questions/27426/how-do-i-fit-a-set-of-data-to-a-pareto-distribution-in-r
+The Pareto distribution is not available in vanilla R, although it is available in many packages. See https://cran.r-project.org/web/views/Distributions.html
+
+## Direct Fitting of data
+Here is the simple function offered there to estimate distribution parameters (for non-censored data):
+```{r}
+pareto.MLE <- function(X)
+{
+   n <- length(X)
+   m <- min(X, na.rm=TRUE)
+   a <- n/sum(log(X)-log(m), na.rm=TRUE)
+   return( c(m,a)) 
+}
+
+pareto.MLE(coli_data$ColiVal)
+```
+We can use the Pareto functions from the actuar package to work with the Pareto distribution.
+```{r}
+densityvals <- tibble(x = seq(1,1000,.1), y= dpareto(seq(1,1000,.1), 1.9, 1.675))
+
+ggplot(coli_data, aes(ColiVal)) +
+  geom_density(bw=0.1) +
+  geom_line(data = densityvals,  aes(x=x, y=y), color = 'orange') +
+  scale_x_log10(limits=c(1,50)) 
+  ylim(c(0,2))
+
+```
+So, we're on the right track, but not dealing with censoring is causing problems. This distribution has no values below 1.9,although we know there should be such observations were data not censored.  Even those 1.9 values are an artifact of how the data were interpreted.  Those are almost certainly really censored values that should be 2.0.  Also, the discrete nature of low values is problematic. This is really "interval censored data".  A range of potential observations are pooled into aggregate estimated values.
+
+So, we need to address censoring.
+
+# fitdistrplus Package
+ALthough we tested writing our own maximum likelihood estimator for censored Pareto data, it did not perform well on simulated data, perhaps because of the heavy tails of the Pareto distribution.  The package 'fitdistrplus' provides  functions for fitting standard as well as non-standard distributions both with and without censored data.  We test it first without accounting for censoring.
+```{r}
+test_dat <- coli_data %>%
+  filter(! is.na(ColiVal)) %>%
+  select(ColiVal, LCFlag, RCFlag)
+plotdist(test_dat$ColiVal, histo = TRUE, demp = TRUE)
+```
+The package contains and interesting function that provides a graphical representation of data in terms of kurtosis and skewness.  The output is helpful for evaluating potential alternative data distributions. 
+```{r}
+descdist(test_dat$ColiVal, boot = 1000)
+```
+That plot confirms that the data has heavier tails than either lognormal or gamma distributions  A Beta distribution is not appropriate, since Beta variates are bounded between zero and one.  We need a highly skewed, heavy-tailed distribution with a support on at least most of the positive real line. 
+
+```{r}
+descdist(log10(test_dat$ColiVal), boot = 1000)
+```
+even log-transformed data is problematic to model. It is significantly more skew than an exponential distribution.
+
+## Fit a Pareto Distribution
+The Pareto distribution is not part of base R, but it is included in at least three packages, actuar, EnvStats and VGAM.  The internal implementations are slightly different.
+
+##PDF from EnvStats
+$$f(x; η, θ) = \frac{θ η^θ}{x^{θ + 1}}, \; η > 0, \; θ > 0, \; x ≥ η$$
+## PDF from actuar:
+$$f(x;a,s) = \frac{a s^a } {(x + s)^{(a + 1)}}, \; a > 0, \; s > 0, \; x ≥ 0$$
+So, these are slightly different parameterizations that basically shift values.
+
+The actuar parameterization includes all x values greater than zero.  The EnvStats includes only x values greater than a minimum value.
+
+actuar includes a 'single parameter Pareto distribution' via pareto1 which has a PDF the same as the pareto distribution from EnvStats. The help file in actuar indicates that the distribution looks like it has two parameters, but the minimum value (η) "must be set in advance". It is not appropriately estimated from the data, which is what we do fitting the EnvStats distribution as a two parameter family.
+
+For reasons that I don't really understand, results of some methods for fitting distributions works well with data from one of these package, and not the others.
+
+Simple application of default maximum likelihood does not work with the pareto functions from EnvStats, but does work with the pareto functions from actuar.
+```{r}
+f_mle <- fitdist(test_dat$ColiVal, "pareto", start = list(shape=1, scale=1))
+cat('\n')
+f_mle$estimate
+```
+
+We can also use the Pareto1 functions, but we need to specify an (arbitrary!) minimum value grtreater than zero, and the shape parameter appears to be sensitive to choice of the minimum value.
+```{r}
+ff_mle <- fitdist(test_dat$ColiVal, "pareto1", start = list(shape=1), fix.arg=list(min = 1))
+cat('\n')
+ff_mle$estimate
+```
+
+The function provides three other approaches to fitting a distribution :  "mme" for 'moment matching estimation', "qme" for 'quantile matching estimation' and "mge" for 'maximum goodness-of-fit estimation'.  Each of these other methods requires additional prameters to run.
+
+Using a maximizing goodness of fit method works with a "start" parameter.  The default distance metric here is Cramer-von Mises distance, but other options are available.  For some reason, The methods produces clear nonsense in this setting.
+```{r}
+f_mge <- fitdist(test_dat$ColiVal, "pareto", method='mge', start = list(shape=1, scale=1))
+cat('\n')
+f_mge$estimate
+```
+
+```{r}
+ff_mge <- fitdist(test_dat$ColiVal, "pareto1", method='mge', start = list(shape=1), fix.arg=list(min = 1))
+cat('\n')
+ff_mge$estimate
+```
+That failed completely with the two parameter Pareto function from actuar, but worked with the functions from EnvStat on actuar's one parameter distribution.
+
+Quantile matching also works, with a list of quantiles to be matched. Since we have two parameters to fit, we can ask for fits at two quantiles. It's not obvious statistically what quantiles make the most sense, but the shellfish sanitation program is interested in the geometric mean and the p90, Here we could go with the median and the 90th percentile.
+```{r}
+f_qme <- fitdist(test_dat$ColiVal, "pareto", method='qme', probs=c(.50, .90),
+              start = list(shape=1, scale=1))
+cat('\n')
+f_qme$estimate
+```
+The results are different from the prior estimates, which is troubling.  I am unclear on how signficiant these differences are in terms of , but may reflect the impact of censoring on the estimates.
+
+The fourth method, moment matching estimation, requires a function for estimating the moments of the distribution.  That is not provided by EnvStats and the exact requirements for the function are not clear from teh help files.  We could roll our own function calculating the mean and variance, but we have two suitable fitting methods already.
+
+```{r}
+memp  <-  function(x, order) mean(x^order, na.rm=TRUE)
+
+f_mme <- fitdist(test_dat$ColiVal, "pareto", method='mme', order = c(1,2), memp = memp)
+cat('\n')
+f_mme$estimate
+```
+again, quite different....
+
+## Plot results of those fits
+```{r}
+plot(f_mle)
+```
+
+```{r}
+plot(f_mge)
+```
+```{r}
+plot(f_qme)
+```
+
+```{r}
+plot(f_mme)
+```
+So, they all look strange to one degree or another....  MLE and QME appear to provide teh "best" fit jusdging solely visibly on the plots. 
+
+
+```{r}
+f_mlevals <- tibble(x = seq(.1,1000,.1), y= dpareto(seq(.1,1000,.1), f_mle$estimate[1],f_mle$estimate[2]))
+f_mgevals <- tibble(x = seq(.1,1000,.1), y= dpareto(seq(.1,1000,.1), f_mge$estimate[1],f_mge$estimate[2]))
+f_qmevals <- tibble(x = seq(.1,1000,.1), y= dpareto(seq(.1,1000,.1), f_qme$estimate[1],f_qme$estimate[2]))
+f_mmevals <- tibble(x = seq(.1,1000,.1), y= dpareto(seq(.1,1000,.1), f_mme$estimate[1],f_mme$estimate[2]))
+ggplot() +
+  #geom_histogram(data=coli_data, mapping = aes(x=ColiVal, y=..density..), bins = 20) +
+  geom_line(data = f_mlevals,  aes(x=x, y=y), color = 'orange') +
+  geom_line(data = f_mgevals,  aes(x=x, y=y), color = 'red') +
+  geom_line(data = f_qmevals,  aes(x=x, y=y), color = 'blue') +
+  geom_line(data = f_mmevals,  aes(x=x, y=y), color = 'green') +
+  geom_density(data=coli_data, mapping = aes(x=ColiVal)) +
+  scale_x_log10(limits=c(.5,500)) # +
+ # scale_y_log10(limits = c(.01, 10))
+```
+All of which shows that the differences among these fits are most pronounced  at the small end of the distribution, where data are censored. (Getting a density histogram that shows values over one is an annoyance without an easy solution here).  Also, the real dta may actually have even heavier tails than these pareto 
+
+# Understanding Censoring in these data
+## What values are represented in our data?
+```{r}
+plot(as.numeric(levels(factor(coli_data$ColiVal))))
+```
+Non-integer values include the following:
+```{r}
+levels(factor(coli_data$ColiVal[which(coli_data$ColiVal != as.integer(coli_data$ColiVal))]))
+```
+These are discrete but non-integer values.  Presumably these reflect the possible numerical values derived from the methods used to estimate number of colony fomrmong units in each water sample.
+
+
+# Fitting a Pareto Distribution to Censored Data
+The FAQ file for the fitdistplus files says the following about fitting censored data with the fitdistcens function):
+
+> Censored data must be represented in the package by a dataframe of two columns respectively named left and right, describing each observed value as an interval. The left column contains either NA for left censored observations, the left bound of the interval for interval censored observations, or the observed value for non-censored observations. The right column contains either NA for right censored observations, the right bound of the interval for interval censored observations, or the observed value for non-censored observations.
+
+The function uses maximum likelihood to estimate parameters.
+
+So, we need to address several cases here for censoring:
+1.  Values below 2.0
+2.  Discrete nature of values reported by the sampling method, especially at lower values
+3.  Right cenesored values that exceed the method upper limit
+
+```{r}
+cens_data <- coli_data %>%
+  select(ColiVal, LCFlag, RCFlag) %>%
+  filter(! is.na(ColiVal)) %>%
+  mutate(left  = ifelse(LCFlag, NA, ColiVal)) %>%
+  mutate(right = ifelse(RCFlag, NA, ColiVal)) %>%
+  select(left,right)
+      
+ff <- fitdistcens(data.frame(cens_data), 'pareto', start = list(location=1, shape=1.5))
+ff
+     
+```
+Error code 100 is the same error we found when trying to estimate parameters using our own maximum likelihood function.  
+
+Perhaps the problem is with the implementation of the Pareto distributionin EnvStats, which lacks some supporting functions like mpareto.
+
+```{r}
+library(actuar)
+      
+ff <- fitdistcens(data.frame(cens_data), 'pareto', start = list(shape=1, scale=1))
+ff
+     
+```
+
+Yup.  That's apparently the problem....
+
+```
+So again, the differences among these different 
+
+
+
+
+

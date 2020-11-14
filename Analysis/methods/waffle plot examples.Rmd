@@ -1,0 +1,211 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+# Load Libraries
+```{r}
+require(tidyverse)
+require(ggplot2)
+
+# For some testing
+library(extrafont)
+library(waffle)
+library(hrbrthemes)
+```
+# Test Version of waffle
+Unfortunately, the version of waffle on CRAN is out of date.  The up to date version is available on github. Here's how to check. The up to date version is verion = 1.0.1.
+```{r}
+packageVersion("waffle")
+```
+
+# Load Data
+```{r}
+sibfldnm <- 'Derived Data'
+parent <- dirname(getwd())
+sibling <- file.path(parent,sibfldnm)
+fn = 'Shellfish data 2015 2018.csv'
+path <- file.path(sibling, fn)
+coli_data <- read_csv(path)
+
+coli_data <- coli_data %>%
+  mutate_at(4:8, factor) %>%
+  mutate(Class = factor(Class,levels = c( 'A', 'CA', 'CR',
+                                         'R', 'P', 'X' ))) %>%
+  mutate(Tide = factor(Tide, levels = c("L", "LF", "F", "HF",
+                                        "H", "HE", "E", "LE")))
+coli_limits <- list(low = 0, gmlow=14, p90low=31, gmhigh=88, p90high=163, high= 5000)
+
+freq_data<- coli_data %>%
+  filter(! is.na(ColiVal)) %>%
+  mutate(lvls4 = cut(ColiVal, coli_limits, labels = c('low', 'gmlow', 'p90low', 'gmhigh', 'p90high')))
+freq_data <- freq_data %>% 
+  select(-ColiScore, -RawColi, -LCFlag, -RCFlag, -ColiVal)
+rm(coli_data, coli_limits, fn, parent, sibling, sibfldnm, path)
+```
+
+# Waffle Plot
+This proved more difficult to use than it shoud have been, epecially the verions using glyphs.  I have already installed the Font Awesome fonts, although that proved difficult and confusing too.  My solutions ot that challenge may explain why things were difficult here.
+```{r}
+loadfonts(quiet=TRUE)
+extrafont::fonttable() %>% 
+  as_tibble() %>% 
+  filter(grepl("Awesom", FamilyName)) %>% 
+  select(afmfile, FullName, FamilyName, FontName)
+```
+
+```{r}
+fa_list()
+```
+
+
+
+And, more, the "Font Awesome" font is tricky to install and use. In principal, the waffle package can use glyphs from any font, including Font Awesome.  But it is trickier in ptractice than it should be.
+
+
+## Create a simple data frame
+Total Number of Samples:`r sum(tmp$count)`
+
+```{r}
+tmp <- freq_data %>%
+  select(lvls4) %>%
+  group_by(lvls4) %>%
+  summarize(count = n())
+tt <- setNames(tmp$count, as.character(tmp$lvls4))
+```
+## And Make SOme Waffle Plots
+```{r}
+wp <- waffle(tt/25, rows = 30, xlab="1 sq = 25 Samples") +
+  scale_label_pictogram(labels=levels(tmp$lvls4))
+wp
+
+```
+A proportional waffle plot requires using the geoms, which is slightly challenging. By setting color=fill, you can get a solid block look.  Generally, you are better off with color=white, which puts whitespace between squares.  You can control the width of those while lines with size=X
+```{r}
+wp <- ggplot(tmp, aes(fill=lvls4,values= count)) + geom_waffle(aes(color=lvls4),make_proportional = TRUE, n_rows=5)+
+  scale_label_pictogram(name = '', labels=levels(tmp$lvls4)) +
+  coord_equal() +
+  #theme_minimal() +
+  theme_ipsum_rc(grid="") +
+  theme_enhance_waffle()
+wp
+```
+
+```{r}
+wp <- ggplot(tmp, aes(fill=lvls4,values= count)) +
+  geom_waffle(make_proportional = TRUE, color='white', size=3)+
+  scale_fill_brewer(palette='Pastel2', name = NULL, labels = c(levels(tmp$lvls4))) +
+  coord_equal() +
+  #theme_minimal() +
+  theme_ipsum_rc(grid="") +
+  theme_enhance_waffle()
+wp
+```
+
+# Using Pictograms
+## Simple Example
+Making a call to waffle() works, but only if I provide a font family...
+```{r}
+waffle(c(50, 30, 15, 5), rows = 5, use_glyph = 'ambulance', glyph_size = 6)
+```
+
+```{r}
+waffle(c(50, 30, 15, 5), rows = 5, use_glyph = 'ambulance', glyph_font_family="Font Awesome 5 Free Solid", glyph_size = 6)
+```
+### Works with real data too
+Here it is with our data.  However, I can't get this to work when I change the glyphs to many named glyphs shown in fa_list(). I have found no rhyme or reason for which glyphs are available.
+```{r}
+wp2 <- waffle(tt/50, rows = 10, xlab="1 sq = 50 Samples",
+              use_glyph = 'medkit', glyph_font_family="Font Awesome 5 Free Solid",
+              glyph_size = 6) 
+wp2
+
+```
+# Examples using geom_pictogram
+As far as I can tell, geom_opictogram provides no obvious way to specify the font family. I tried to provide a glyph_font_family="Font Awesome 5 Free Solid", but the parameter has no effect in ggplot, and is not recognized in geom_pictogram or scale_label_pictogram.
+
+Note that you need to provide matching scales with identical labels to scale_color_XX() and scale_label_pictogram() if you want to see only one scale.
+```{r}
+wp2 <- ggplot(tmp, aes(label=lvls4, values= count) ) +    #,
+              #glyph_font_family="Font Awesome 5 Free Solid") +
+  geom_pictogram(n_rows=5, aes(color=lvls4),
+                 make_proportional = TRUE) +  #  , 
+                 #glyph_font_family="Font Awesome 5 Free Solid") +
+  scale_color_manual(
+    name = NULL,
+    values = c("green", "yellow", "brown", "orange", "red"),
+    labels = c("Good", "so-so", "problematic", "crappy", "catastrophic")) +
+  scale_label_pictogram(
+    name = NULL,
+    #glyph_font_family="Font Awesome 5 Free Solid",
+    values = c("apple-alt", "bread-slice", "pizza-slice", "medkit", "ambulance"),
+    labels = c("Good", "so-so", "problematic", "crappy", "catastrophic")) +
+  coord_equal() +
+  theme_ipsum_rc(grid="") +
+  theme_enhance_waffle() +
+  theme(legend.key.height = unit(2.25, "line")) +
+  theme(legend.text = element_text(size = 10, hjust = 0, vjust = 0.75))
+wp2
+```
+And I don't appear to be able to create a ggplot object with waffle and modify it with the geom. I tried various options here.
+```{r}
+wp2 <-waffle(tmp, glyph_font_family="Font Awesome 5 Free Solid") +
+  geom_pictogram(data = tmp, n_rows=5, aes(color=lvls4),
+                 make_proportional = TRUE)
+wp2
+```
+  
+  
+  +
+  scale_color_manual(
+    name = NULL,
+    values = c("green", "yellow", "brown", "orange", "red"),
+    labels = c("Good", "so-so", "problematic", "crappy", "catastrophic")) +
+  scale_label_pictogram(
+    name = NULL,
+    #glyph_font_family="Font Awesome 5 Free Solid",
+    values = c("apple-alt", "bread-slice", "pizza-slice", "medkit", "ambulance"),
+    labels = c("Good", "so-so", "problematic", "crappy", "catastrophic")) +
+  coord_equal() +
+  theme_ipsum_rc(grid="") +
+  theme_enhance_waffle() +
+  theme(legend.key.height = unit(2.25, "line")) +
+  theme(legend.text = element_text(size = 10, hjust = 0, vjust = 0.75))
+wp2
+```
+
+
+
+The same thing happens with the demo code....
+```{r}
+data.frame(
+  parts = factor(rep(month.abb[1:3], 3), levels=month.abb[1:3]),
+  vals = c(10, 20, 30, 6, 14, 40, 30, 20, 10),
+  col = rep(c("blue", "black", "red"), 3),
+  fct = c(rep("Thing 1", 3),
+          rep("Thing 2", 3),
+          rep("Thing 3", 3))
+) -> xdf
+
+xdf %>%
+  count(parts, wt = vals) %>%
+  ggplot(aes(label = parts, values = n)) +
+  geom_pictogram(n_rows = 10, aes(colour = parts),
+                 flip = TRUE, make_proportional = TRUE) +
+  scale_color_manual(
+    name = NULL,
+    values = c("#a40000", "#c68958", "#ae6056"),
+    labels = c("Fruit", "Sammich", "Pizza")
+  ) +
+  scale_label_pictogram(
+    name = NULL,
+    values = c("apple-alt", "bread-slice", "pizza-slice"),
+    labels = c("Fruit", "Sammich", "Pizza")
+  ) +
+  coord_equal() +
+  theme_ipsum_rc(grid="") +
+  theme_enhance_waffle() +
+  theme(legend.key.height = unit(2.25, "line")) +
+  theme(legend.text = element_text(size = 10, hjust = 0, vjust = 0.75))
+```
+
+

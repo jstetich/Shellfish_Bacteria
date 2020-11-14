@@ -1,0 +1,214 @@
+---
+title: "Frequency of Exceedences Analysis"
+output: html_notebook
+---
+# Introduction
+The bacteria data is highly skewed. We have found no ready way to estimate a gemometric mean for these data in a robust way.  The data appears distributed close to a Pareto distribution, which is highly skewed, with a heavy right tail.  This distribution is likely to be difficult to model, so we can not readily estimate parameters, moments and other summary statistics.
+
+One possiblity would be to run some sort of (generalized) linear model on the log of data, calculate means and medians, and back transform. I hope to explore both linear model approaches in another R Notebook.
+
+Here we take another approach, which is to focus on binomial, quasi-binomial, and multinomial proortional odds models to estimate probabilities of exceeding different regulatory thresholds.
+## Growing Area Classification Standards
+
+Growing Area Classification | Activity Allowed |	Geometric mean FC/100ml	| 90th Percentile (P90) FC/100ml
+----------------------------|------------------|--------------------------|-------------------------------
+Approved	               | Harvesting allowed	                                                      | ≤ 14	              | ≤ 31
+Conditionally Approved	 | Harvesting allowed except during specified conditions	                  | ≤ 14 in open status	| ≤ 31 in open status
+Restricted	             | Depuration harvesting or relay only	                                    | ≤ 88 and >15	      | ≤ 163 and >31
+Conditionally Restricted |Depuration harvesting or relay allowed except during specified conditions	| ≤ 88 in open status	| ≤ 163 in open status
+Prohibited	             | Aquaculture seed production only	                                        | >88	                |>163
+
+So, critical levels for Geometric Mean include:
+$<=14$ and  $<= 88$
+and for the p90
+$< 31$ and $<= 163$
+
+# Load Libraries
+```{r}
+library(MASS)
+library(readr)
+library(GGally)
+library(tidyverse)
+library(emmeans)
+```
+
+# Load Data
+```{r}
+sibfldnm <- 'Derived Data'
+parent <- dirname(getwd())
+sibling <- file.path(parent,sibfldnm)
+fn = 'Shellfish data 2015 2018.csv'
+path <- file.path(sibling, fn)
+coli_data <- read_csv(path)
+
+```
+## Convert to Factors
+```{r}
+coli_data <- coli_data %>%
+  mutate_at(4:8, factor) %>%
+  mutate(Class = factor(Class,levels = c( 'A', 'CA', 'CR',
+                                         'R', 'P', 'X' ))) %>%
+  mutate(Tide = factor(Tide, levels = c("L", "LF", "F", "HF",
+                                        "H", "HE", "E", "LE"))) %>%
+  mutate(MONTH = factor(MONTH, labels = month.abb))
+```
+## Calculate Indicator Variables
+Here we calculate variables that indicate whether each sample exceeds our four thresholds.  Then they are combined to produce three additional synthetic multinomial ordered factors.
+
+So, the key thresholds are these:
+```{r}
+coli_limits <- list(low = 0, gmlow=14, p90low=31, gmhigh=88, p90high=163, high= 5000)
+
+freq_data<- coli_data %>%
+  filter(! is.na(ColiVal)) %>%
+  mutate(lvl4 = cut(ColiVal, coli_limits, labels = c('low', 'gmlow', 'p90low', 'gmhigh', 'p90high'))) %>%
+  mutate(lvl2 = cut(ColiVal, coli_limits[c(1,3,5,6)], labels = c('low', 'p90low', 'p90high'))) %>%
+  mutate(lvl1lo = cut(ColiVal, coli_limits[c(1,3,6)], labels = c('low', 'p90low'))) %>%
+  mutate(lvl1hi = cut(ColiVal, coli_limits[c(1,5,6)], labels = c('low', 'p90high')))
+
+freq_data <- freq_data %>% 
+  select(-ColiScore, -RawColi, -LCFlag, -RCFlag, -ColiVal)
+```
+
+```{r}
+freq_data %>% select(MONTH, lvl4) %>%
+  mutate(MONTH=factor(MONTH)) %>%
+  ggpairs(aes(MONTH, lvl4)) 
+  
+```
+
+So, it is painfully obvious that:
+1. Most observations are from summer months
+2. Most observations are lower than all our cut points
+3. Probability of Exceedences is slightly higher in summer months.
+
+```{r}
+mo_agg_dat <- freq_data %>%
+  mutate(MONTH = factor(MONTH, labels =month.abb)) %>%
+  count(MONTH, lvl4)
+ 
+plt <- ggplot(mo_agg_dat, aes(MONTH, n, fill=lvl4)) +
+   geom_bar(stat = "identity", position='fill') +
+  theme_minimal()
+   
+plt
+   
+```
+
+# Modelling
+We'll explore three different modelling strategies:
+1. A binomial GLM for exceedences of the LOWER p90 threshold
+2. A multinomial proportional odds model using the polr function from MASS
+3. A mutinomial model using VGLM
+
+It's clear we need to account for different sampling histories to provide robust comperable estimates of site probabilities.
+
+# Binomial GLM
+## Preliminaries
+I'll want to be able to compare the results of modelling to observed relative frequencies of exceedences, so we want a simple dataframe containing those probabilities.  If I were using these for serious analysis I'd derive them directly from the raw coli_data , rather than the derived freq_data.
+```{r}
+rawexceedences <- freq_data %>%
+  filter(! is.na(lvl1lo) & ! is.na(lvl1hi)) %>%
+  select(Station, lvl1lo, lvl1hi) %>%
+  group_by(Station) %>%
+  summarize(pExceedLo = sum(lvl1lo == 'p90low', na.rm=TRUE)/sum(!is.na(lvl1lo)),
+            pExceedHi = sum(lvl1hi == 'p90high', na.rm=TRUE)/sum(!is.na(lvl1hi)))
+ggplot(rawexceedences, aes(pExceedLo, pExceedHi)) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1) +
+  coord_equal()
+```
+Which looks pretty good.
+
+#Initial Model
+We would like to check model adequacy with a full interaction model, then return to fit a simpler model that simply adjusts for month. But the full interaction model is very slow to run, as it has 13*239 parameters to fit. I stopped the model run after about a half an hour....
+
+An alternative would be to fit a model with a quadratic or sinusoidal function of time of year, and see what that produces.  But here I think that's overkill. 
+
+We fit a model without an intercept because what we want to understand is the probabilities of exceeding the threshold for each station, and we are not interested in testing whether differences between stations have any special meaning. 
+```{r}
+#bglm0 <- glm(lvl1lo~Station*MONTH, data = freq_data, family=binomial(link=logit))
+bglm1 <- glm(lvl1lo~Station+MONTH + 0, data = freq_data, family=binomial(link=logit))
+```
+```{r}
+anova(bglm1, test='LRT')
+```
+
+As expected, months are highly statistically significant -- a finding of little value here.  We are interested in the coefficients for the Stations, which are effectively adjusted for any deviations in sampling frequency by month.
+
+The residual deviance here is quite small for more than 9000 df....
+```{r}
+pchisq(3673.7, 9196, lower.tail = FALSE)
+```
+Remember the coefficients are actually the logit of the Probabilities we are interested in, so we need a couple of utility functions.  I'm sure these must be defined someewhere in R, but I've never found them.
+```{r}
+flogit <- function(p) {log(p)-log(1-p)}
+flogistic <- function(x) {1/(1+exp(-x))}
+```
+
+
+```{r}
+res<-coef(bglm1)[1:239]
+pres<- flogistic(res)
+
+rawexceedences %>%
+  mutate(predicted = pres) %>%
+  ggplot(aes(pExceedLo, predicted) ) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1) +
+  coord_equal()
+```
+So, once adjusted for monthly sampling differences, the remainder of the probabilities are only about one third as high as what we observe in the "real" data.... Why?
+
+Probably because these values are based on the default month, which is..... January, as can be confirmed by looking at hte model sumamry or list of coefficients.
+
+This will produce a HUGE printout, but its worth doing to make sure I understand the model that I just fit.
+```{r eval=FALSE}
+(t <- getOption("max.print"))
+options(max.print=2500)
+summary(bglm1)
+options(max.print=t)
+```
+So, yes, the default month is January.  That's not very helpful, and the odds of exceeding the threshold is much smaller (log odds in late summer and fall ~ 4, so the odds ratio is about `r exp(4)` 
+
+We have a couple of different approaches we can take to deal with this -- the first is to relevel the months, picking a different reference month. The second is to use estimated marginal means, which are the equivalent in R of what are called least squares means in SAS.  The emmeans package replaces the older lsmeans package.
+
+I prefer the second approach.
+
+```{r}
+mmrg <- ref_grid(bglm1)  # Marginal Means Reference Grid
+mm <- emmeans(bglm1, "Station")
+head(summary(mm), 5)     # Summary has class dataframe, making access and display easier.
+```
+```{r}
+mms <- summary(mm)
+pred <- flogistic(mms$emmean)
+
+rawexceedences %>%
+  mutate(predicted = pred) %>%
+  ggplot(aes(pExceedLo, predicted) ) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1) +
+  coord_equal()
+
+```
+Now that looks pretty good.
+
+As expected, the predicted probabilties are lower than the observed frequencies, because the real data "oversamples" the higher risk summer months.
+
+Note that what we have here are the probabilities that an individual observation exceeds the p90 thresholds.  All the probabilities are below 90%, suggesting all sample locations should be open, and they are not. It would be nice to color these by some of the predictor variables....  but for that I need to extract more predictors on a statin by station basis.
+
+Note also that the high correlation -- eyeballing that graphic suggests the correlation is over 0.9 -- means there's only a little advantage to adjusting sites for their seasonal sampling history.
+
+Can I generate estimated marginal means focusing on summer months?
+Or can I drop the 2019 data, which is unequal monthly sampling from historical data, and then use the actual marginal means.
+
+
+
+
+
+
+
+
+
+

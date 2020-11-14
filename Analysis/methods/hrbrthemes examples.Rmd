@@ -1,0 +1,102 @@
+---
+title: "Exploring hrbrthemes"
+output: html_notebook
+---
+
+# Introduction
+These themes emphasise careful font design, and follow a nice, generally minimalist design aesthetic otherwise. Here I deom the different themes in the hrbrthemes package, for later review and discussion.
+
+
+# Load Libraries
+```{r}
+require(tidyverse)
+require(ggplot2)
+
+# For testing
+library(extrafont)
+library(hrbrthemes)
+```
+
+# Load Data
+```{r}
+sibfldnm <- 'Derived Data'
+parent <- dirname(getwd())
+sibling <- file.path(parent,sibfldnm)
+fn = 'Shellfish data 2015 2018.csv'
+path <- file.path(sibling, fn)
+coli_data <- read_csv(path)
+
+coli_data <- coli_data %>%
+  mutate_at(4:8, factor) %>%
+  mutate(Class = factor(Class,levels = c( 'A', 'CA', 'CR',
+                                         'R', 'P', 'X' ))) %>%
+  mutate(Tide = factor(Tide, levels = c("L", "LF", "F", "HF",
+                                        "H", "HE", "E", "LE")))
+coli_limits <- list(low = 0, gmlow=14, p90low=31, gmhigh=88, p90high=163, high= 5000)
+
+freq_data<- coli_data %>%
+  filter(! is.na(ColiVal)) %>%
+  mutate(lvls4 = cut(ColiVal, coli_limits, labels = c('low', 'gmlow', 'p90low', 'gmhigh', 'p90high')))
+freq_data <- freq_data %>% 
+  select(-ColiScore, -RawColi, -LCFlag, -RCFlag, -ColiVal)
+rm(coli_data, coli_limits, fn, parent, sibling, sibfldnm, path)
+```
+
+
+# Import hrbrthemes Fonts
+I probably don't need to do this every time, but this is for completeness.  Despite the warnings, have already installed all these fonts in the  windows font folder
+```{r}
+import_econ_sans()
+import_plex_sans()
+import_public_sans()
+import_roboto_condensed()
+import_tinyhand()
+import_titillium_web()
+```
+
+#Testing another set of graphic themes and fonts.
+```{r}
+mo_agg_dat <- freq_data %>%
+  mutate(MONTH = factor(MONTH, labels = c('jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'))) %>%
+  count(MONTH, lvls4)
+ 
+plt <- ggplot(mo_agg_dat, aes(MONTH, n, fill=lvls4)) +
+   geom_bar(stat = "identity", position='fill')
+   
+plt + theme_ipsum_rc()
+   
+```
+## Other versions
+hrbrthemes comes with multiple default themes focused on typography, including
+Abreviation |  Example Function Call  |  Font Family
+------------|-------------------------|---------------------
+"rc"        |  theme_ipsum_rc()       |Roboto Condensed
+""          |  theme_ipsum()          |Arial Narrow
+"es"        |  theme_ipsum_es()       |Econ Sans Condensed
+"ps"        |  theme_ipsum_ps()       |BM Plex Sans
+"pub"       |  theme_ipsum_pub()      |Public Sans
+"tw"        |  theme_ipsum_tw()       |Titillium Web
+"tinyhand"  |  theme_tinyhand()       | Tinyhand
+ 
+### Reversed Shading
+"Modern R Studio" Theme
+```{r}
+plt + theme_modern_rc()  #also try theme_ft_rc()
+```
+ 
+```{r}
+plt + theme_ipsum_es()
+```
+```{r}
+plt + theme_ipsum_pub()
+```
+  
+```{r}
+plt  + theme_ipsum_tw()
+```
+And, an especially odd-looking example , useable for draft graphics in powerpoint, perhaps.  It reminds me  a bit of the look using the xkcd fonts, but it's harder to read, despite better kerning.
+```{r}
+plt  + theme_tinyhand(base_family = "BF Tiny Hand") +
+  theme(axis.text.x = element_text(angle=90, hjust = .25, vjust = .25))
+```
+
