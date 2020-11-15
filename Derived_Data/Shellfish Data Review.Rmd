@@ -27,7 +27,7 @@ library(tidyverse)
 # Load Data
 ## Folder References
 ```{r}
-sibfldnm <- 'Original Data'
+sibfldnm <- 'Original_Data'
 parent <- dirname(getwd())
 sibling <- file.path(parent,sibfldnm)
 fn<- "Casco Bay WQ 15.19.csv"
@@ -84,16 +84,19 @@ raw_data <- read_csv(path,
 ```{r}
 with(raw_data, xtabs(~factor(format(EFFORT_START_DATE, '%m')) +factor(YEAR)))
 ```
+
 Note that we the data sent to us does includes fewer November and no December
 observations in 2019.  We may be better off restricting our analysis to
-2015-2018.  Althoug hwe can check for seasonal patterns in the data as a check
+2015-2018.  Although we can check for seasonal patterns in the data as a check
 on the necessity for that.
+
 ## Convert Orders of Factors
 Since these are factors, and not ordered factors, this is merely to make it a
 bit easier to interpret results.It also has the effect of changing the base
 category for contrasts.  Note that this will not affect ordering of factors when
 data is loaded in from CSV files, so this code (or something very like it) will
 have to be run in any data analysis scripts.
+
 ## What levels are present?
 ```{r}
 with(raw_data, levels(OPEN_CLOSED_FLAG))
@@ -102,6 +105,7 @@ with(raw_data, levels(TIDE_STAGE))
 with(raw_data, levels(CURRENT_CLASSIFICATION_CODE))
 with(raw_data, levels(CATEGORY))
 ```
+
 ## Reorder Some
 ```{r}
 raw_data <- raw_data %>%
@@ -115,6 +119,7 @@ raw_data <- raw_data %>%
   mutate(TIDE_STAGE = factor(TIDE_STAGE, levels = c("L", "LF", "F", "HF",
                                                     "H", "HE", "E", "LE")))
 ```
+
 ## Simplify Column Names
 Data names from DMR are long, in all caps, and awkward, so we want to simplify.
 While we are at it, we want names to more or less match what we found in the p90
@@ -141,7 +146,6 @@ raw_data <- raw_data %>%
          RawColi = RAW_COL_SCORE)
 ```
 
-
 ```{r}
 with(raw_data, sum(OpenClosed=='X', na.rm=TRUE))
 with(raw_data, xtabs(~OpenClosed+factor(YEAR)))
@@ -161,14 +165,16 @@ to year, so they may not be all that useful for analysis.
 ```{r}
 with(raw_data, xtabs(~OpenClosed+CATEGORY))
 ```
+
 So CATEGORY contains no useful information for us.
 ```{r}
 with(raw_data, xtabs(~OpenClosed+Class))
 ```
+
 Note that there's a (nearly) one to one match between category = Z, OPenClosed=X
 and  Class= X.  Also note that Category = I was only used once.
 
-I'd like to know what the meaning of the OpenCLosed flag really is.  Was this a
+We'd like to know what the meaning of the OpenClosed flag really is.  Was this a
 flag showing condition before the sample, or a classification due to the results
 of the sample.  We should be able to determine that based on the data itself.
 
@@ -206,11 +212,12 @@ ggplot(the_data, aes(ColiVal, ColiScore)) +
   geom_point() +
   geom_abline(slope = 1, intercept = 0)
 ```
+
 So, here we see a couple of things:
 
-1. DMR replaced "raw" observations with arbitary larrger or smaller values when
-   they produced the "ColiScore values.  We may be able to do better, or handle
-   these censored data with more sophistication.
+1. DMR replaced "raw" observations with arbitrary larger or smaller values when
+   they produced the `"`ColiScore` values.  We may be able to do better, or
+   handle these censored data with more sophistication.
    
 2. There's a strange observation or group of observations that was recorded as
    < something that is well above the nominal detection limits.
@@ -221,18 +228,26 @@ ggplot(the_data[the_data$ColiScore<5,], aes(ColiVal, ColiScore)) +
   geom_point(alpha = 0.1) +
   geom_abline(slope = 1, intercept = 0)
 ```
-so we have some inconsistency of how censored observations at the low end were
-handled.  The detection limit with the methods is presumably consistent at 2.0
-but apparently 1.9 was recorded in some places.
+So we have some inconsistency of how censored observations at the low end were
+handled. DMR USUALLY recorded their `COL_SCORE` as 1.9, presumably because that
+is "slightly below 2.0", which is the true reporting limit for  the method. But
+a few times, DMR also reports the 'RAW_COL_SCORE' as "1.9", instead of "<2."
+
 ```{r}
-sum(the_data$ColiVal==1.9 & the_data$ColiScore == 1.9, na.rm=TRUE)
-sum(the_data$ColiVal==1.9, na.rm=TRUE)
+the_data %>%
+filter(ColiScore<2) %>%
+  filter(RawColi != '<2') %>%
+  select(SDate, ColiScore, RawColi, ColiVal, LCFlag)
 ```
-So, those inconsistencies are very rare, and can be corrected with little
-concern for loss of accuracy.
+
+Those anomalous entries come almost entirely from one day.  Our guess is that the
+detection limit for the method used does not vary, and so, these observations
+were incorrectly recorded. Luckily, the apparent inconsistencies are very rare,
+and can be  adjusted with little concern for loss of accuracy.
 ```{r}
 the_data$ColiVal[the_data$ColiVal==1.9 ] = 2.0
 ```
+
 What about other inconsistencies, with regard to what values are flagged as left
 censored?
 ```{r}
@@ -244,14 +259,17 @@ the_data %>%
 ```
 
 ```{r}
-the_data[the_data$ColiVal==18 & the_data$LCFlag, ]
+the_data[the_data$ColiVal==18 & the_data$LCFlag, ] %>%
+  select(SDate, ColiScore, RawColi, ColiVal, LCFlag)
 ```
-For these three sample, DMR interpreted them consistently, assuming the real
-meaning of these samples is that they were left censored below a detection limit
-of 18.  The observations were all from a single day.  This elevated detection
-limit is problematic, as it will bias any unsophisticated handling of
-non-detects.  We could consider removing these observations as anomalous, but
-there is no internal justification for removing these values.
+DMR recorded three samples as left censored, with a reporting limit of 18. The
+observations were all from a single day.  This elevated detection
+limit is problematic, as it cold bias any unsophisticated handling of
+non-detects.
+
+We could consider removing these observations as anomalies, but
+there is no internal justification for doing so.  For now, we leave them in 
+place.
 
 # Right Censoring
 ```{r}
@@ -260,27 +278,10 @@ ggplot(the_data[the_data$ColiScore>1000,], aes(ColiVal, ColiScore)) +
   geom_abline(slope = 1, intercept = 0)
 ```
 
-
 ```{r}
 the_data %>%
-filter(ColiVal>1500) 
+filter(ColiScore>1500) %>%
+  select(ColiScore, RawColi, ColiVal, RCFlag)
 ```
 So, DMR used an arbitrary value of 1700 as being "slightly" higher than the 1600
 upper detection limit.
-
-# Data export
-```{r}
-cn <- colnames(the_data)
-write.table(the_data, 'Shellfish data 2015 2018.csv', sep = ',',
-            na='', row.names = FALSE, col.names = cn)
-```
-
-# Final Data Cleanup
-We may want to directly load the data produces in this Notebook for use in
-analysis, rather than importing it from the CSV file, so we might as well clean
-things up.
-
-```{r}
-rm(raw_data, cn, fn,  path, parent, sibfldnm, sibling)
-```
-

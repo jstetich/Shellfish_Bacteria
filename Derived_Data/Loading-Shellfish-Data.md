@@ -28,6 +28,8 @@ Curtis C. Bohlen, Casco Bay Estuary Partnership.
       - [Convert Order of Factors](#convert-order-of-factors)
       - [Simplify Column Names](#simplify-column-names)
   - [Deal With Censoring](#deal-with-censoring)
+      - [Correct Censoring
+        Inconsistencies](#correct-censoring-inconsistencies)
   - [Data export](#data-export)
   - [Final Data Cleanup](#final-data-cleanup)
 
@@ -624,6 +626,11 @@ flags for left and right censored observations, and create a data column
 that contains either observed values, or the censored value (reporting
 limit), depending on values of those flags.
 
+There is some evidence that DMR may have coded the censored values
+inconsistently, sometimes using the value “1700” when the data was right
+censored at 1600, and sometimes using the value of 1.9 when the data was
+left cencored at 2.0.
+
 ``` r
 the_data <- raw_data %>%
   #Identify censored data
@@ -637,6 +644,19 @@ the_data <- raw_data %>%
                            ColiVal)) %>%
   mutate(ColiVal = as.numeric(ColiVal))
 ```
+
+### Correct Censoring Inconsistencies
+
+``` r
+the_data$ColiVal[the_data$ColiVal==1.9 ] = 2.0
+the_data$LCFlag[the_data$ColiVal==1.9 ] = TRUE
+```
+
+DMR also recorded three samples as left censored, but with a reporting
+limit of 18. The observations were all from a single day. We suspect
+these values are also some sort of a recording error, but they are
+recorded in a consistent manner, so here is no internal evidence of a
+problem. We leave them in, unaltered.
 
 # Data export
 
