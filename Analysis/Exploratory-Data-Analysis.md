@@ -39,7 +39,7 @@ library(tidyverse)
     ## x dplyr::lag()    masks stats::lag()
 
 ``` r
-library(corrr)  # Used for correlate(), which produces a dataframe
+library(corrr)  # Used for correlate(), which produces a data frame
 ```
 
     ## Warning: package 'corrr' was built under R version 4.0.3
@@ -127,7 +127,7 @@ coli_data %>%
 
 So, no strong linear correlations. Correlations are slightly higher
 using rank correlations.although weak correlations with temperature and
-Salinity and salinity and E COli may never the less be meaningful, or
+Salinity and salinity and *E. coli* may never the less be meaningful, or
 there may be non-linear relationships at play.
 
 ``` r
@@ -251,7 +251,7 @@ to an ANOVA analysis, but with standard errors and significance levels
 driven by permutation tests rather than assumptions of normality. I am
 not certain how well that would work with these data’s heavy tails.
 
-If we are willing to forego the modelling sophistication possible with
+If we are willing to forego the modeling sophistication possible with
 linear models, we might be able to test for differences in medians by
 classes using a rank-based procedure, such as Wilcoxon / Kruskal-Wallis,
 etc.
@@ -282,7 +282,7 @@ sites that we can use to show geographic patterns. The second need is
 for models that allow us to explore the impact of both categorical and
 quantitative predictors.
 
-Here are the criteris used for establishing shellfish harvest area
+Here are the criteria used for establishing shellfish harvest area
 
 ## Growing Area Classification Standards
 
