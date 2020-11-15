@@ -1,11 +1,22 @@
 ---
 title: "Shellfish Sanitation Program Data Assembly"
-output: html_notebook
+author: "Curtis C. Bohlen, Casco Bay Estuary Partnership."
+date: "11/14/2020"
+output:
+  github_document:
+    toc: true
+    fig_width: 7
+    fig_height: 5
 ---
-# INtroduction
-Initial loading of the raw observational data uncovered what appear to be data format inconsistnecies with the way the E. coli data were recorded.Here we explore th e data inconsiustencies and make decisions regarding how to address them.
+<img
+    src="https://www.cascobayestuary.org/wp-content/uploads/2014/04/logo_sm.jpg"
+    style="position:absolute;top:10px;right:50px;" />
 
-
+# Introduction
+Initial loading of the raw observational data uncovered what appear to be data
+format inconsistencies with the way the E. coli data were recorded. Here we
+explore the data inconsistencies and make decisions regarding how to address
+them.
 
 # Install Libraries
 ```{r}
@@ -14,12 +25,18 @@ library(tidyverse)
 ```
 
 # Load Data
-Most of this code is to skip data columns that were used for data QA/QC, or to ensure dates and times are properly interpreted.
+## Folder References
 ```{r}
 sibfldnm <- 'Original Data'
 parent <- dirname(getwd())
 sibling <- file.path(parent,sibfldnm)
 fn<- "Casco Bay WQ 15.19.csv"
+```
+
+## Read Data
+Most of this code is to skip data columns that were used for data QA/QC, or to 
+ensure dates and times are properly interpreted.
+```{r}
 path <- file.path(sibling, fn)
 raw_data <- read_csv(path, 
     col_types = cols(
@@ -67,9 +84,16 @@ raw_data <- read_csv(path,
 ```{r}
 with(raw_data, xtabs(~factor(format(EFFORT_START_DATE, '%m')) +factor(YEAR)))
 ```
-Note that we the data sent to us does includes fewer November and no December observations in 2019.  We may be better off restricting our analysis to 2015-2018.  Althoug hwe can check for seasonal patterns in the data as a check on the necessity for that.
+Note that we the data sent to us does includes fewer November and no December
+observations in 2019.  We may be better off restricting our analysis to
+2015-2018.  Althoug hwe can check for seasonal patterns in the data as a check
+on the necessity for that.
 ## Convert Orders of Factors
-Since these are factors, and not ordered factors, this is merely to make it a bit easier to interpret results.It also has the effect of changing the base category for contrasts.  Note that this will not affect ordering of factors when data is loaded in from CSV files, so this code (or something very like it) will have to be run in any data analysis scripts.
+Since these are factors, and not ordered factors, this is merely to make it a
+bit easier to interpret results.It also has the effect of changing the base
+category for contrasts.  Note that this will not affect ordering of factors when
+data is loaded in from CSV files, so this code (or something very like it) will
+have to be run in any data analysis scripts.
 ## What levels are present?
 ```{r}
 with(raw_data, levels(OPEN_CLOSED_FLAG))
@@ -92,7 +116,9 @@ raw_data <- raw_data %>%
                                                     "H", "HE", "E", "LE")))
 ```
 ## Simplify Column Names
-Data names from DMR are long, in all caps, and awkward, so we want to simplify.  While we are at it, we want names to more or less match what we found in the p90 files.
+Data names from DMR are long, in all caps, and awkward, so we want to simplify.
+While we are at it, we want names to more or less match what we found in the p90
+files.
 ```{r}
 names(raw_data)
 ```
@@ -111,7 +137,7 @@ raw_data <- raw_data %>%
          Class = CURRENT_CLASSIFICATION_CODE,
          Temp = TEMP_C,
          Sal = SALINITY_PCT,
-         ColiScore = COL_SCORE,    # This value uses inapporpriate substitution based on right censored values.
+         ColiScore = COL_SCORE,    # This value uses inappropriate substitution based on right censored values.
          RawColi = RAW_COL_SCORE)
 ```
 
@@ -120,13 +146,17 @@ raw_data <- raw_data %>%
 with(raw_data, sum(OpenClosed=='X', na.rm=TRUE))
 with(raw_data, xtabs(~OpenClosed+factor(YEAR)))
 ```
-So, the "X" flag was not used prior to 2018, and used infrequently in 2019.  We need to understand what that flag means, but it may be appropriate for some analyses to delete records with the X flag....
+So, the "X" flag was not used prior to 2018, and used infrequently in 2019.  We
+need to understand what that flag means, but it may be appropriate for some
+analyses to delete records with the X flag....
 
 ```{r}
 with(raw_data, levels(WDIR))
 with(raw_data, xtabs(~WDIR+factor(YEAR)))
 ```
-Only "NW" was recorded in 2019. Most 2019 observations have no wind direction code. NNE was only used in 2016. Otherwoise, these data look inconsistent year to year, so they may not be all that useful for analysis.
+Only "NW" was recorded in 2019. Most 2019 observations have no wind direction
+code. NNE was only used in 2016. Otherwoise, these data look inconsistent year
+to year, so they may not be all that useful for analysis.
 
 ```{r}
 with(raw_data, xtabs(~OpenClosed+CATEGORY))
@@ -135,12 +165,16 @@ So CATEGORY contains no useful information for us.
 ```{r}
 with(raw_data, xtabs(~OpenClosed+Class))
 ```
-Note that there's a (nearly) one to one match between category = Z, OPenClosed=X and  Class= X.  Also note that Category = I was only used once.
+Note that there's a (nearly) one to one match between category = Z, OPenClosed=X
+and  Class= X.  Also note that Category = I was only used once.
 
-I'd like to know what the meaning of the OpenCLosed flag really is.  Was this a flag showing condition before the sample, or a classification due to the results of the sample.  We should be able to determine that based on the data itself.
+I'd like to know what the meaning of the OpenCLosed flag really is.  Was this a
+flag showing condition before the sample, or a classification due to the results
+of the sample.  We should be able to determine that based on the data itself.
 
 ## Remove Unreliable / Uninformative Categories
-This code removes uninformative or inconsistent data and replaces "X" values with NA.
+This code removes uninformative or inconsistent data and replaces "X" values
+with NA.
 ```{r}
 raw_data<-raw_data %>%
   select(-CATEGORY, -WDIR) %>%
@@ -173,8 +207,13 @@ ggplot(the_data, aes(ColiVal, ColiScore)) +
   geom_abline(slope = 1, intercept = 0)
 ```
 So, here we see a couple of things:
-1. DMR replaced "raw" observations with arbitary larrger or smaller values when they produced the "ColiScore values.  We may be able to do better, or handle these censored data with more sophistication.
-2.  there's a strange observation or group of observations that was recorded as < something that is wel labove the nominal detection limits.
+
+1. DMR replaced "raw" observations with arbitary larrger or smaller values when
+   they produced the "ColiScore values.  We may be able to do better, or handle
+   these censored data with more sophistication.
+   
+2. There's a strange observation or group of observations that was recorded as
+   < something that is well above the nominal detection limits.
 
 ## Left Censoring
 ```{r}
@@ -182,16 +221,20 @@ ggplot(the_data[the_data$ColiScore<5,], aes(ColiVal, ColiScore)) +
   geom_point(alpha = 0.1) +
   geom_abline(slope = 1, intercept = 0)
 ```
-so we have some inconsistency of how censored observations at the low end were handled.  The detection limit with the methods is presumably consistent at 2.0  but apparently 1.9 was recorded in some places.
+so we have some inconsistency of how censored observations at the low end were
+handled.  The detection limit with the methods is presumably consistent at 2.0
+but apparently 1.9 was recorded in some places.
 ```{r}
 sum(the_data$ColiVal==1.9 & the_data$ColiScore == 1.9, na.rm=TRUE)
 sum(the_data$ColiVal==1.9, na.rm=TRUE)
 ```
-So, those inconsistencies are very rare, and can be corrected with little concern for loss of accuracy.
+So, those inconsistencies are very rare, and can be corrected with little
+concern for loss of accuracy.
 ```{r}
 the_data$ColiVal[the_data$ColiVal==1.9 ] = 2.0
 ```
-What about other inconsistencies, with regard to what values are flagged as left censored?
+What about other inconsistencies, with regard to what values are flagged as left
+censored?
 ```{r}
 the_data %>%
   filter(LCFlag) %>%
@@ -203,7 +246,12 @@ the_data %>%
 ```{r}
 the_data[the_data$ColiVal==18 & the_data$LCFlag, ]
 ```
-For these three sample, DMR interpreted them consistently, assuming the real meaning of these samples is that they were left censored below a detection limit of 18.  The observations were all from a single day.  This elevated detection limit is problematic, as it will bias any unsophisticated handling of non-detects.  We could consider removing these observations as anomolous, but there is no internal justification for latering these values.
+For these three sample, DMR interpreted them consistently, assuming the real
+meaning of these samples is that they were left censored below a detection limit
+of 18.  The observations were all from a single day.  This elevated detection
+limit is problematic, as it will bias any unsophisticated handling of
+non-detects.  We could consider removing these observations as anomalous, but
+there is no internal justification for removing these values.
 
 # Right Censoring
 ```{r}
@@ -211,11 +259,14 @@ ggplot(the_data[the_data$ColiScore>1000,], aes(ColiVal, ColiScore)) +
   geom_point(alpha = 0.1) +
   geom_abline(slope = 1, intercept = 0)
 ```
+
+
 ```{r}
 the_data %>%
 filter(ColiVal>1500) 
 ```
-So, DMR used an arbitrary value of 1700 as being "slightly" higher than the 1600 upper detection limit.
+So, DMR used an arbitrary value of 1700 as being "slightly" higher than the 1600
+upper detection limit.
 
 # Data export
 ```{r}
@@ -225,7 +276,9 @@ write.table(the_data, 'Shellfish data 2015 2018.csv', sep = ',',
 ```
 
 # Final Data Cleanup
-We may want to directly load the data produces in this Notebook for use in analysis, rather than importing it from the CSV file, so we might as well clean things up.
+We may want to directly load the data produces in this Notebook for use in
+analysis, rather than importing it from the CSV file, so we might as well clean
+things up.
 
 ```{r}
 rm(raw_data, cn, fn,  path, parent, sibfldnm, sibling)

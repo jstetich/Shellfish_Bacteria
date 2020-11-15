@@ -1,7 +1,16 @@
 ---
-title: "Shellfish Sanitation Program Data Assembly"
-output: html_notebook
+title: "Shellfish Sanitation Program Data Review and Assembly"
+author: "Curtis C. Bohlen, Casco Bay Estuary Partnership."
+date: "11/14/2020"
+output:
+  github_document:
+    toc: true
+    fig_width: 7
+    fig_height: 5
 ---
+<img
+    src="https://www.cascobayestuary.org/wp-content/uploads/2014/04/logo_sm.jpg"
+    style="position:absolute;top:10px;right:50px;" />
 
 # Install Libraries
 ```{r}
@@ -10,10 +19,14 @@ library(readxl)
 library(tidyverse)
 ```
 
-# Load Data
-First we create a string that gets us to our sibling folder, then load the data.  Unfortunately, the data file formats are not entirely compatible, so we need to handle this carefully.
+# Load p90 Data
+First we create a string that gets us to our sibling folder, then load the data.
+Unfortunately, the data file formats are not entirely compatible, so we need to 
+handle this carefully.
+
+## Folder References
 ```{r}
-sibfldnm <- 'Original Data'
+sibfldnm <- 'Original_Data'
 parent <- dirname(getwd())
 sibling <- file.path(parent,sibfldnm)
 
@@ -21,59 +34,107 @@ fl1<- "2016 p90 for CBEP.xlsx"
 fl2 <- "2017 p90 for CBEP.xlsx"
 fl3 <- "MaineDMR_Public_Health__2018_P90_Scores.csv"
 fl4 <- "Casco Bay WQ 15.19.csv"
+```
 
+## Read Data
+```{r}
 path <- file.path(sibling, fl1)
-p90.data.2018 <- read_excel(path) %>%
+p90_data_2016 <- read_excel(path) %>%
   select(-OBJECTID) %>%
   select(-Min_Date) %>%
   mutate(Year = 2016)
 
 path <- file.path(sibling, fl2)
-tmp1 <- read_excel(path) %>%
+p90_data_2017 <- read_excel(path) %>%
   select(-OBJECTID) %>%
   select(-Min_Date) %>%
   mutate(Year = 2017)
 
 path <- file.path(sibling, fl3)
-tmp2 <- read_csv(path) %>%
+p90_data_2018 <- read_csv(path) %>%
   select(-OBJECTID) %>%
   select(-X,-Y) %>%
   select(-GlobalID) %>%
   rename(Count=Count_, MAX=MAX_) %>%
   mutate(Year = 2018)
 ```
-
-# P90 Summary Data
+## Finalize Combined p90 Data
 ```{r}
-#Check Consistency of mnames and order
-names(p90.data.2018)
-names(tmp1)
-names(tmp2)
+p90_data <- rbind(p90_data_2016,p90_data_2017, p90_data_2018) %>%
+  mutate_at(c('Station','Class', 'Grow_Area'), factor)
 ```
 
-# The summary data is not what it appears
-The data released by DMR is a summary of findings over the prior 30 observations, which may occur over multiple years.  In practice, that means the 2016, 2017, and 2018 data releases are not independent, since only a handful of samples are collected at any given location.
+
+# Extract list of Locations / Stations
+```{r}
+p90_locs_data <- p90_data %>%
+  select(Station, Lat_DD, Long_DD) %>%
+  group_by(Station) %>%
+  summarize(Lat = mean(Lat_DD, na.rm = TRUE), Long = mean(Long_DD, na.rm = TRUE),
+            minLat = mean(Lat_DD, na.rm = TRUE), minLong = mean(Long_DD, na.rm = TRUE),
+            maxLat = mean(Lat_DD, na.rm = TRUE), maxLong = mean(Long_DD, na.rm = TRUE),
+            n = n(),
+            dists = sqrt((maxLat-minLat)^2 +(maxLong-minLong)^2),
+            .groups = 'drop') %>%
+  select(-minLat, -maxLat, -minLong, -maxLong)
+  
+```
+Oddly, although the prior code shows all Station records have zero distance
+between recorded locations, R does not consider them unique, probably because
+the lats and longs differ minutely because of finite precision.
+```{r}
+p90_locs_data_2 <- p90_data %>%
+  select(Station, Lat_DD, Long_DD) %>%
+  unique()
+```
+
+```{r}
+length(p90_locs_data$Station)
+length(p90_locs_data_2$Station)
+```
+
+```{r}
+p90_locs_data <- p90_locs_data %>% select(-n, -dists)
+rm(p90_locs_data_2)
+```
+
+## Export Locations Data As CSV Files
+```{r}
+cn <- colnames(p90_locs_data)
+write_csv(p90_locs_data, 'Shellfish p90 Locations.csv', na='')
+```
+
+# P90 Data Review
+## Check Consistency of names and order
+```{r}
+
+names(p90_data_2018)
+names(p90_data_2017)
+names(p90_data_2018)
+```
+
+## The summary data is not what it appears
+The data released by DMR is a summary of findings over the prior 30
+observations, which may occur over multiple years.  In practice, that means the
+2016, 2017, and 2018 data releases are not independent, since only a handful of
+samples are collected at any given location.
 
 To show this graphically:
-
 ```{r}
-p90.data <- rbind(p90.data.2018,tmp1, tmp2) %>%
-  mutate_at(c('Station','Class', 'Grow_Area'), factor)
-rm(tmp1, tmp2)
-```
-```{r}
-p90.data %>% 
-  filter (Year >2016) %>%
+p90_data %>% 
+  filter (Year > 2016) %>%
   select(Station, Year, GM) %>%
   pivot_wider(names_from=Year, names_prefix='Yr',
               values_from=GM) %>%
   ggplot(aes(Yr2017, Yr2018)) + geom_point() +
   geom_abline(slope = 1, intercept=0, color = 'red')
 ```
-So, there's a very close correlation between the geometric means reported in subsequent years.
+So, there's a very close correlation between the geometric means reported in
+subsequent years.  That is, of course, to be expected if raw observations are
+based on overlapping sets of observations.
 
 ```{r}
-p90.data %>% 
+p90_data %>% 
   filter (Year >2016) %>%
   select(Station, Year, P90) %>%
   pivot_wider(names_from=Year, names_prefix='Yr',
@@ -85,7 +146,7 @@ The same is true for the p90 value here.
 
 If you prefer correlations:
 ```{r}
-tmp <- p90.data %>% 
+tmp <- p90_data %>% 
   filter (Year >2016) %>%
   select(Station, Year, P90) %>%
   pivot_wider(names_from=Year, names_prefix='Yr',
@@ -93,62 +154,61 @@ tmp <- p90.data %>%
 cor(tmp$Yr2017, tmp$Yr2018, use = 'pairwise')
 cor(log(tmp$Yr2017), log(tmp$Yr2018), use = 'pairwise')
 cor(tmp$Yr2017, tmp$Yr2018, use = 'pairwise', method = 'spearman')
+rm(tmp)
+```
+There is no advantage to keeping all three year's data -- except that it may
+provide a convenient list of regularly sampled locations.  Since subsequent
+years are replicates, we might as well go with the most recent year.
+```{r}
+rm(p90_data_2016, p90_data_2017, p90_data)
 ```
 
 ## Check Data Structure
-Are statistics based on thirty observations or not.
+Are statistics based on thirty observations or not?
 ```{r}
 # Total Sample Size
-with(p90.data,length(Count ))
-# How many results are based on 30 observations?
-with(p90.data,sum(Count > 30, nm.rm=TRUE))
-with(p90.data,sum(Count < 30, nm.rm=TRUE))
-#What was the lowest number of samples that underly a value?
-with(p90.data,min(Count, nm.rm=TRUE))
+with(p90_data_2018,length(Count ))
+
+# How many results are NOT based on 30 observations?
+with(p90_data_2018,sum(Count > 30, nm.rm=TRUE))
+with(p90_data_2018,sum(Count < 30, nm.rm=TRUE))
+
+#What was the lowest number of samples that underlie a value?
+with(p90_data_2018,min(Count, nm.rm=TRUE))
+
 # HOw many missing values?
-with(p90.data,sum(is.na(Count)))
+with(p90_data_2018,sum(is.na(Count)))
 ```
 So, most data is based on 30 observations, as expected.
+
 ## Data Consistency 
-Checking to see whther we have mismatches between reported number of samples and checking whether all samples are useing the same threshold values for whether stations can be considered approved or restricted.
+Checking to see whether we have mismatches between reported number of samples
+and checking whether all samples are using the same threshold values for
+whether stations can be considered approved or restricted.
 ```{r}
-with(p90.data,sum(Count != MFCount, nm.rm=TRUE))
-with(p90.data, sum(Appd_Std != 31, nm.rm=TRUE))
-with(p90.data, sum(Restr_Std != 163, nm.rm=TRUE))
+with(p90_data_2018, sum(Count != MFCount, nm.rm=TRUE))
+with(p90_data_2018, sum(Appd_Std != 31, nm.rm=TRUE))
+with(p90_data_2018, sum(Restr_Std != 163, nm.rm=TRUE))
 ```
-So, things are almost all consistent.
+So, things are almost all consistent. Only a few records are inconsistent.
 
-There is no advantage to keeping all three year's data -- except that it may provide a convenient list of regularly sampled locations.  The primary value for us is the convenient sumamries DMR produces annually -- which may be good enough for some graphic displays, if all we want to show are the geometric means or the p90 values.
+# Raw Observations 2015 through 2018
+After realizing the format of the p90 data, we  requested raw data from DMR.
+The primary reason for requesting these data is that DMR does not use available
+information efficiently to evaluate very low bacteria numbers, and does not look
+at frequency of elevated samples -- both of which may be important for
+understanding what is going on.
 
-# Extract complete list of Locations / Stations
-```{r}
-p90.locs.data <- p90.data %>%
-  select(Station, Lat_DD, Long_DD) %>%
-  group_by(Station) %>%
-  summarize(Lat = first(Lat_DD), Long = first(Long_DD))
-```
-## Export Locations Data As CSV Files
-```{r}
-cn <- colnames(p90.locs.data)
-write.table(p90.locs.data, 'Shellfish p90 Locations.csv',
-            sep = ',', na='', row.names = FALSE, col.names = cn)
-```
-
-```{r}
-rm(p90.data)
-```
-
-#Raw Observations 2015 through 2018
-After realizing the format of the p90 data, we  requested raw data from DMR.  The primary reason for requesting these data is that DMR does not use available information eficiently to evaluate very low bacteria numbers, and does not look at frequency of elevated samples -- both of which may be important for understanding what is going on.
-
-DMR also collects temperature and salinity data, which is not reported in the summary files.
+DMR also collects temperature and salinity data, which is not reported in the
+summary files.
 
 ## Load Data
-Most of this code is to skip data columns that were used for data QA/QC, or to ensure dates and times are properly interpreted.
+Most of this code is to skip data columns that were used for data QA/QC, or to 
+ensure dates and times are properly interpreted.
 ```{r}
 fn<- "Casco Bay WQ 15.19.csv"
 path <- file.path(sibling, fn)
-raw.data <- read_csv(path, 
+raw_data <- read_csv(path, 
     col_types = cols(
         ADVERSITY = col_skip(),  
         CATCH_COMMENTS = col_skip(), 
@@ -188,46 +248,67 @@ raw.data <- read_csv(path,
               'CATEGORY'), factor) %>%
   mutate(YEAR = as.numeric(format(EFFORT_START_DATE, "%Y")))
 ```
+
 ## Review Status of Data
 ```{r}
-with(raw.data, length(levels(LOCATION_ID)))
-with(raw.data, levels(GROWING_AREA))
-with(raw.data, levels(OPEN_CLOSED_FLAG))
-with(raw.data, sum(OPEN_CLOSED_FLAG=='X', na.rm=TRUE))
-with(raw.data, xtabs(~OPEN_CLOSED_FLAG+factor(YEAR)))
+with(raw_data, length(levels(LOCATION_ID)))
+with(raw_data, levels(GROWING_AREA))
+with(raw_data, levels(OPEN_CLOSED_FLAG))
+with(raw_data, sum(OPEN_CLOSED_FLAG=='X', na.rm=TRUE))
+with(raw_data, xtabs(~OPEN_CLOSED_FLAG+factor(YEAR)))
 ```
-So, the "X" flag was not used prior to 2018, and mostly in 2019.  Is that because decisions to close the flat are not made immediately?  Perhaps this factor is not useful for us.
+
+So, the "X" flag was not used prior to 2018, and mostly in 2019.  Is that 
+because decisions to close the flat are not made immediately?  Perhaps this 
+factor is not useful for us.
+
 ```{r}
-with(raw.data, levels(WIND_DIRECTION))
-with(raw.data, xtabs(~WIND_DIRECTION+factor(YEAR)))
+with(raw_data, levels(WIND_DIRECTION))
+with(raw_data, xtabs(~WIND_DIRECTION+factor(YEAR)))
 ```
-So, for some reason, "NW" was not used prior to 2019.  NNE was only used in 2016.  Many fewer N observations after 2017. MAny fewer SE observations in 2016.  These data look inconsistent over time, so may not be all that useful foir analysis.
+
+So, for some reason, "NW" was not used prior to 2019.  NNE was only used in 
+2016.  Many fewer N observations after 2017. MAny fewer SE observations in 2016.
+These data look inconsistent over time, so may not be all that useful for 
+analysis.
+
 ```{r}
-with(raw.data, levels(TIDE_STAGE))
-with(raw.data, levels(CURRENT_CLASSIFICATION_CODE))
-with(raw.data, levels(CATEGORY))
+with(raw_data, levels(TIDE_STAGE))
+with(raw_data, levels(CURRENT_CLASSIFICATION_CODE))
+with(raw_data, levels(CATEGORY))
 ```
 
 ```{r}
-with(raw.data, xtabs(~CATEGORY+CURRENT_CLASSIFICATION_CODE))
-with(raw.data, xtabs(~OPEN_CLOSED_FLAG+CURRENT_CLASSIFICATION_CODE))
+with(raw_data, xtabs(~CATEGORY+CURRENT_CLASSIFICATION_CODE))
+with(raw_data, xtabs(~OPEN_CLOSED_FLAG+CURRENT_CLASSIFICATION_CODE))
 ```
-Note that there's a one to one match between category -= Z and Current Classification = X.  Is this a change in data categories?  Also note that Category = I was only used once.
+Note that there's a one to one match between category -= Z and Current
+Classification = X.  Is this a change in data categories?  Also note that 
+Category = I was only used once.
 
-Current classification liooks like it may be useful, but I'm not sure what to do with Cuurent Classification =, which is almost al 2019 data, pehpas because status has not been finalized yet?
+Current classification looks like it may be useful, but I'm not sure what to do 
+with Current Classification =, which is almost al 2019 data, perhas because 
+status has not been finalized yet?
 
 ## Convert NNE wind direction to N
-NNE was used for only 10 observations in 2016, and its use is inconsistent with recording wind direction  in eight directions.
+NNE was used for only 10 observations in 2016, and its use is inconsistent with 
+recording wind direction  in eight directions.  THE direction could be swapped
+to "NE" or to "N."  We arbitrarily selected N.
 ```{r}
-raw.data <- raw.data %>%
+raw_data <- raw_data %>%
   mutate(WIND_DIRECTION = factor(if_else(WIND_DIRECTION == 'NNE', 'N',
                                          as.character(WIND_DIRECTION))))
-with(raw.data, xtabs(~WIND_DIRECTION+factor(YEAR)))
+with(raw_data, xtabs(~WIND_DIRECTION+factor(YEAR)))
 ```
+
 ## Convert Order of Factors
-Since these are factors, and not ordered factors, this is merely to make it a bit easier to look at results.  It also has the effect of changing the base category for contrasts.  Note that this will not affect ordering of factors when data is loaded in from CSV files, so this code (or something very like it) will have to be run in the data analysis scripts too.
+Since these are factors, and not ordered factors, this is merely to make it a
+bit easier to look at results.  It also has the effect of changing the base
+category for contrasts.  Note that this will not affect ordering of factors when
+data is loaded in from CSV files, so this code (or something very like it) will
+have to be run in the data analysis scripts too.
 ```{r}
-raw.data <- raw.data %>%
+raw_data <- raw_data %>%
   mutate(WIND_DIRECTION =factor(WIND_DIRECTION,
                                 levels = c("CL", "N", "NE",
                                            "E","SE", "S","SW",
@@ -240,13 +321,15 @@ raw.data <- raw.data %>%
 ```
 
 ## Simplify Column Names
-Data names from DMR are long, in all caps, and awkward, so we want to simplify.  While we are at it, we want names to more or less match what we found in the p90 files.
+Data names from DMR are long, in all caps, and awkward, so we want to simplify.  
+While we are at it, we want names to more or less match what we found in the 
+p90 files.
 ```{r}
-names(raw.data)
+names(raw_data)
 ```
 
 ```{r}
-raw.data <- raw.data %>%
+raw_data <- raw_data %>%
   select(-FLOOD, -DELIVERY_TEMP_C) %>%
   rename(SDate = EFFORT_START_DATE,
          STime = EFFORT_START_TIME,
@@ -262,10 +345,20 @@ raw.data <- raw.data %>%
          ColiScore = COL_SCORE,    # This value uses inapporpriate substitution based on right censored values.
          RawColi = RAW_COL_SCORE)
 ```
+
 # Deal With Censoring
-This data has both left and right censoring, although right censoring is relatively uncommon.  I am unaware of a library in R that handles doubly censored data with grace, however it would not be difficult to develop my own maximum likelihood methods.
+This data has both left and right censoring, although right censoring is
+relatively uncommon.  We are unaware of a library in R that handles doubly
+censored data with grace, however it would not be too difficult to develop our
+own maximum likelihood methods.
+
+Here we handle the confusing `RawColi` data (which includes "<" and ">" values,
+so can not be parsed as numeric by R), add separate flags for left and right
+censored observations, and create a data column that contains either observed
+values, or the censored value (reporting limit), depending on values of those
+flags.
 ```{r}
-the.data <- raw.data %>%
+the_data <- raw_data %>%
   #Identify censored data
   mutate(LCFlag = substr(RawColi,1,1)=='<') %>%
   mutate(RCFlag = substr(RawColi,1,1)=='>') %>%
@@ -280,14 +373,16 @@ the.data <- raw.data %>%
 
 # Data export
 ```{r}
-cn <- colnames(the.data)
-write.table(the.data, 'Shellfish data 2015 2018.csv', sep = ',',
-            na='', row.names = FALSE, col.names = cn)
+cn <- colnames(the_data)
+write_csv(the_data, 'Shellfish data 2015 2018.csv', na='')
 ```
 
 # Final Data Cleanup
-We may want to directly load the data produces in this Notebook for use in analysis, rather than importing it from the CSV file, so we might as well clean things up.
+We may want to directly load the data produces in this Notebook for use in
+analysis, rather than importing it from the CSV file, so we might as well clean
+things up.
 ```{r}
 rm(cn, fn, fl1, fl2, fl3, fl4, path, parent, sibfldnm, sibling)
+rm(raw_data)
 ```
 
