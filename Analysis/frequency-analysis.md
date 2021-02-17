@@ -18,6 +18,7 @@ Curtis C. Bohlen, Casco Bay Estuary Partnership.
     -   [Calculate Indicator Variables](#calculate-indicator-variables)
     -   [Raw Station Probabilitiies](#raw-station-probabilitiies)
     -   [Add Imperviousness Data](#add-imperviousness-data)
+-   [Export Data for GIS](#export-data-for-gis)
 -   [Exploratory Graphics](#exploratory-graphics)
 -   [Utility Functions](#utility-functions)
 -   [Cleanup](#cleanup)
@@ -96,7 +97,8 @@ interval.
 
 A “90 day interval” might apply to a summer’s worth of data, but in most
 years that will only represent a handful of observations at each site,
-so it is of limited value.
+so it is of limited value. More seriously, the standard is written in
+terms of “enterococcus” bacteria, not the “*e. coli*” data used by DMR.
 
 # Load Libraries
 
@@ -333,7 +335,7 @@ rawprobs %>%
   theme_cbep(base_size = 10)
 ```
 
-<img src="frequency-analysis_files/figure-gfm/unnamed-chunk-10-1.png" style="display: block; margin: auto;" />
+<img src="frequency-analysis_files/figure-gfm/calculate_observed_frequencies-1.png" style="display: block; margin: auto;" />
 
 Which looks pretty good. Recall that the reason the points are all above
 the 1:1 line is that it is impossible to exceed the higher standard
@@ -392,6 +394,13 @@ rawprobs<- rawprobs %>%
 rm(imperv_data)
 ```
 
+# Export Data for GIS
+
+``` r
+freq_data %>%
+  write_csv('shellfish_exceeds_data.csv')
+```
+
 # Exploratory Graphics
 
 ``` r
@@ -399,7 +408,7 @@ freq_data %>% select(month, all_lvls) %>%
   ggpairs(aes(month, all_lvls)) 
 ```
 
-<img src="frequency-analysis_files/figure-gfm/unnamed-chunk-12-1.png" style="display: block; margin: auto;" />
+<img src="frequency-analysis_files/figure-gfm/simple_pairsplot-1.png" style="display: block; margin: auto;" />
 
 1.  Most observations are from summer months
 2.  Most observations are lower than all our cut points
@@ -413,7 +422,10 @@ freq_data %>%
   theme_minimal()
 ```
 
-<img src="frequency-analysis_files/figure-gfm/unnamed-chunk-13-1.png" style="display: block; margin: auto;" />
+<img src="frequency-analysis_files/figure-gfm/freq_bar_all-1.png" style="display: block; margin: auto;" />
+
+The following is the equivalent of 1- p(anything better than P90\_relay)
+in the prior graphic.
 
 ``` r
 freq_data %>%
@@ -423,14 +435,15 @@ freq_data %>%
   theme_minimal()
 ```
 
-<img src="frequency-analysis_files/figure-gfm/unnamed-chunk-14-1.png" style="display: block; margin: auto;" />
+<img src="frequency-analysis_files/figure-gfm/freq_bar_simple-1.png" style="display: block; margin: auto;" />
 
 # Utility Functions
 
-Remember the coefficients of a binomial GLM are actually the logit of
-the probabilities we are interested in, so a couple of utility functions
-come in handy. These are probably not the most numerically stable
-versions of these functions for extreme values, but they work.
+The coefficients of a binomial or multinomial GLM are actually the logit
+(log odds) of the probabilities we are interested in, so a couple of
+utility functions may come in handy. These are probably not the most
+numerically stable versions of these functions for extreme values, but
+they work.
 
 ``` r
 logit <- function(p) {log(p)-log(1-p)}
@@ -478,7 +491,7 @@ system.time(p90_open_glm_1 <- glm(p90_open  ~ station,
              data = freq_data,
              family=binomial(link=logit)))
 #>    user  system elapsed 
-#>    8.50    0.06    8.58
+#>    8.26    0.12    8.40
 ```
 
 ``` r
@@ -523,7 +536,7 @@ plot(p_res) +
   xlab('Probability of Meeting\nP90 Standard' )
 ```
 
-<img src="frequency-analysis_files/figure-gfm/unnamed-chunk-19-1.png" style="display: block; margin: auto;" />
+<img src="frequency-analysis_files/figure-gfm/station_glm_graphic-1.png" style="display: block; margin: auto;" />
 Many sites show unstable standard errors, as they were never observed
 with a sample that failed the standard, triggering a Hauke-Donner
 effect. That makes estimation of parameters and standard errors
@@ -542,7 +555,7 @@ ggplot(tmp, aes(p_p90_open, prob)) +
 #> Warning: Removed 66 rows containing missing values (geom_segment).
 ```
 
-<img src="frequency-analysis_files/figure-gfm/unnamed-chunk-20-1.png" style="display: block; margin: auto;" />
+<img src="frequency-analysis_files/figure-gfm/observed_vs_predicted-1.png" style="display: block; margin: auto;" />
 In a simple model, the predictions match the observed relative
 frequencies and the standard errors behave as expected (wider near the
 middle of a binomial distribution, narrower and asymmetrical near the
@@ -594,11 +607,12 @@ p_res <- summary(emmeans(p90_open_gam_regions, "grow_area",
                         type = 'response'))
 
 plot(p_res) +
-  ylab('Region') +
-  xlab('Probability of Meeting\nP90 Standard' )
+  xlab('Region') +
+  ylab('Probability of Meeting\nP90 Standard' ) +
+  coord_flip()
 ```
 
-<img src="frequency-analysis_files/figure-gfm/unnamed-chunk-22-1.png" style="display: block; margin: auto;" />
+<img src="frequency-analysis_files/figure-gfm/region_draft_graphic-1.png" style="display: block; margin: auto;" />
 
 #### Draft Graphic
 
@@ -611,7 +625,8 @@ plt <- ggplot(p_res, aes(grow_area, prob)) +
                   fill = cbep_colors()[2], size = .75, shape = 23) +
   geom_hline(yintercept = 0.9, color = 'gray85', lty =2, size = 1) +
   
-  ylab('Probability Each Site Meets \nP90 E. coli Standard') +
+  ylab(expression(atop('Frequency of Meeting', 
+                           'P90 ' ~ italic('E. coli') ~ ' Standard'))) +
   xlab('Maine DMR Growing Area') +
 
   theme_cbep(base_size = 12)
@@ -672,7 +687,7 @@ plt <- ggplot(mms, aes(month, prob)) +
   
   xlab('') + 
   ylab(expression(atop('Probability of Meeting', 
-                           'P90' ~ italic('E. coli') ~ 'Standard'))) +
+                           'P90 ' ~ italic('E. coli') ~ ' Standard'))) +
   
   ylim(0.75, 1.0) +
 
@@ -703,7 +718,7 @@ system.time(
 gam.check(p90_open_gam_rain)
 ```
 
-<img src="frequency-analysis_files/figure-gfm/unnamed-chunk-25-1.png" style="display: block; margin: auto;" />
+<img src="frequency-analysis_files/figure-gfm/check_rainfall_gam-1.png" style="display: block; margin: auto;" />
 
     #> 
     #> Method: UBRE   Optimizer: outer newton
@@ -777,7 +792,7 @@ summary(p90_open_gam_rain)
 plot(p90_open_gam_rain)
 ```
 
-<img src="frequency-analysis_files/figure-gfm/unnamed-chunk-28-1.png" style="display: block; margin: auto;" /><img src="frequency-analysis_files/figure-gfm/unnamed-chunk-28-2.png" style="display: block; margin: auto;" /><img src="frequency-analysis_files/figure-gfm/unnamed-chunk-28-3.png" style="display: block; margin: auto;" />
+<img src="frequency-analysis_files/figure-gfm/plot_rainfall_gam-1.png" style="display: block; margin: auto;" /><img src="frequency-analysis_files/figure-gfm/plot_rainfall_gam-2.png" style="display: block; margin: auto;" /><img src="frequency-analysis_files/figure-gfm/plot_rainfall_gam-3.png" style="display: block; margin: auto;" />
 
 ### Imperviousness Models
 
@@ -806,7 +821,7 @@ rawprobs %>%
 #> Warning: Removed 12 rows containing missing values (geom_point).
 ```
 
-<img src="frequency-analysis_files/figure-gfm/unnamed-chunk-29-1.png" style="display: block; margin: auto;" />
+<img src="frequency-analysis_files/figure-gfm/imperv_expl_grap-1.png" style="display: block; margin: auto;" />
 
 While those almost all suggest a decline in probability of meeting
 standards with imperviousness, the relationships rest on the large
@@ -969,9 +984,7 @@ anova(imp_1000_t)
 ```
 
 Again, only the 1000 meter version shows significant patterns with land
-use.
-
-The square root transform makes almost no difference regarding the
+use. The square root transform makes almost no difference regarding the
 adequacy of the fit.
 
 ``` r
@@ -1038,7 +1051,7 @@ rawprobs %>%
   theme_cbep(base_size= 12)
 ```
 
-<img src="frequency-analysis_files/figure-gfm/unnamed-chunk-35-1.png" style="display: block; margin: auto;" />
+<img src="frequency-analysis_files/figure-gfm/imperv_graphic-1.png" style="display: block; margin: auto;" />
 So, the relationship is statistically significant, but not especially
 striking or robust. There is a lot of scatter, and the trend is driven
 mostly by (a) the frequency of sites that never see bad water quality,
@@ -1100,7 +1113,7 @@ ggplot(summ, aes(x = grow_area, fill = all_lvls, y = Prop)) +
   theme_cbep(base_size = 12)
 ```
 
-<img src="frequency-analysis_files/figure-gfm/unnamed-chunk-38-1.png" style="display: block; margin: auto;" />
+<img src="frequency-analysis_files/figure-gfm/hist_levels_by_region-1.png" style="display: block; margin: auto;" />
 
 ### Region Models
 
@@ -1123,7 +1136,7 @@ system.time(
                                          reverse = FALSE))
 )
 #>    user  system elapsed 
-#>    0.24    0.02    0.25
+#>    0.20    0.02    0.22
 ```
 
 ``` r
@@ -1304,7 +1317,7 @@ system.time(
                     method = "logistic")
 )
 #>    user  system elapsed 
-#>    0.24    0.00    0.23
+#>    0.22    0.00    0.22
 ```
 
 ``` r
@@ -1358,7 +1371,7 @@ system.time(
                                          reverse = FALSE))
 )
 #>    user  system elapsed 
-#>    0.22    0.00    0.21
+#>    0.18    0.03    0.22
 ```
 
 ``` r
@@ -1408,7 +1421,7 @@ system.time(
                                          reverse = FALSE))
 )
 #>    user  system elapsed 
-#>    0.22    0.00    0.22
+#>    0.19    0.03    0.22
 ```
 
 ``` r
@@ -1418,8 +1431,7 @@ AIC(pom_rain_2)
 #> [1] 9155.063
 ```
 
-So the full model is preferable. But other than acknowledging the fact
-that rain matters, the magnitude of the effects is modest.
+So the full model is preferable.
 
 ``` r
 summary(pom_rain)
@@ -1458,7 +1470,8 @@ summary(pom_rain)
 ```
 
 The easiest way to interpret these results is in terms of how the
-probability that a sample meets all standards changes with rainfall.
+probability that a sample meets all standards changes with rainfall. We
+calculate probabilities on a grid of rainfall amounts.
 
 ``` r
 rain_df <- tibble(precip = rep(seq(0,2, 0.25),5),
@@ -1489,7 +1502,7 @@ rain_df %>%
        x = "Today's Precipitation")
 ```
 
-<img src="frequency-analysis_files/figure-gfm/unnamed-chunk-56-1.png" style="display: block; margin: auto;" />
+<img src="frequency-analysis_files/figure-gfm/unnamed-chunk-18-1.png" style="display: block; margin: auto;" />
 
 Or, to put it another way, (and not graphically), rainfall drops the
 probability of meeting all criteria from 0.935187 to 0.8527812, by the
