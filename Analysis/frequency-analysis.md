@@ -1,7 +1,7 @@
 Frequency of Exceedences, Shellfish Bacteria Data
 ================
 Curtis C. Bohlen, Casco Bay Estuary Partnership.
-11/14/2020
+02/17/2021
 
 -   [Introduction](#introduction)
     -   [Growing Area Classification
@@ -491,7 +491,7 @@ system.time(p90_open_glm_1 <- glm(p90_open  ~ station,
              data = freq_data,
              family=binomial(link=logit)))
 #>    user  system elapsed 
-#>    8.26    0.12    8.40
+#>    8.42    0.07    8.49
 ```
 
 ``` r
@@ -1136,7 +1136,7 @@ system.time(
                                          reverse = FALSE))
 )
 #>    user  system elapsed 
-#>    0.20    0.02    0.22
+#>    0.21    0.00    0.20
 ```
 
 ``` r
@@ -1317,7 +1317,7 @@ system.time(
                     method = "logistic")
 )
 #>    user  system elapsed 
-#>    0.22    0.00    0.22
+#>    0.24    0.00    0.23
 ```
 
 ``` r
@@ -1371,7 +1371,7 @@ system.time(
                                          reverse = FALSE))
 )
 #>    user  system elapsed 
-#>    0.18    0.03    0.22
+#>    0.20    0.01    0.22
 ```
 
 ``` r
@@ -1421,7 +1421,7 @@ system.time(
                                          reverse = FALSE))
 )
 #>    user  system elapsed 
-#>    0.19    0.03    0.22
+#>    0.18    0.03    0.22
 ```
 
 ``` r

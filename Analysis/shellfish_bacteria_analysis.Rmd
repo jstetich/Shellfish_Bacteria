@@ -1,7 +1,7 @@
 ---
 title: "Analysis of Shellfish Pathogen Data"
 author: "Curtis C. Bohlen, Casco Bay Estuary Partnership."
-date: "11/14/2020"
+date: "02/17/2021"
 output:
   github_document:
     toc: true
@@ -22,24 +22,18 @@ knitr::opts_chunk$set(fig.align = 'center',
 Exploratory analysis highlights the extreme skewness of the distribution of
 bacteria data, both here with the shellfish -related data collected by DMR, and 
 with the data related to recreational beaches, collected by towns, and managed
-by DEP.
-
-Skewness means these data are difficult to analyze with any authority, and so
+by DEP. Skewness means these data are difficult to analyze with any authority, and so
 a degree of humility is called for in interpreting any  analyses.
 
 Our primary goal is to be able to assess if there are important predictors of
 elevated bacteria levels that we can discern, and especially to identify if
-some sites are unusually vulnerable to elevated bacteria levels. 
+some sites are unusually vulnerable to elevated bacteria levels. Here we follow 
+a strategy used in looking at the Beaches data, of looking at several imperfect
+modeling strategies to examine patterns.
 
-Here we follow a strategy used in looking at the Beaches data, of looking at 
-several imperfect modeling strategies to examine patterns.
-
-The challenge is the relatively low sample sizes at each site, and the very 
-heavy tails expected based on exploratory data analysis.
-
-Other notebooks will directly address modeling of exceedences of relevant
-standards, and examination of some covariates.  here we focus on site to site 
-variation.
+Another notebook will directly address modeling of exceedences of relevant
+standards.  Here we focus on site to site variation, and relationships to 
+a few covariates.
 
 # Relevant Standards
 ## Growing Area Classification Standards

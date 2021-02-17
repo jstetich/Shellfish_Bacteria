@@ -1,7 +1,7 @@
 Examining Distribution of Shellfish Pathogen Data
 ================
 Curtis C. Bohlen, Casco Bay Estuary Partnership.
-11/14/2020
+02/10/2021
 
 -   [Introduction](#introduction)
 -   [Load Libraries](#load-libraries)
@@ -19,6 +19,8 @@ Curtis C. Bohlen, Casco Bay Estuary Partnership.
             R](#pareto-distribution-functions-in-r)
         -   [Effect of Parameters on Shape of the
             Distribution](#effect-of-parameters-on-shape-of-the-distribution)
+        -   [Fitting the Pareto
+            Distribution](#fitting-the-pareto-distribution)
         -   [Compare Fits](#compare-fits)
         -   [Fitting a Pareto Distribution to Censored
             Data](#fitting-a-pareto-distribution-to-censored-data)
@@ -158,7 +160,7 @@ coli_data %>%
   pull(ColiVal_2) %>%
   summary
 #>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-#>  0.5506  0.5995  0.6108  0.6109  0.6224  0.6760
+#>  0.5335  0.5998  0.6115  0.6113  0.6228  0.6724
 ```
 
 So, our (lognormal) based estimator for censored values estimates a
@@ -257,10 +259,10 @@ The empirical moments are:
 (a <- with(coli_data, list(mean=mean(ColiVal_2, na.rm=TRUE),
                            var=var(ColiVal_2, na.rm=TRUE))))
 #> $mean
-#> [1] 16.24385
+#> [1] 16.24409
 #> 
 #> $var
-#> [1] 9839.925
+#> [1] 9839.918
 ```
 
 So, by the method of moments, we can examine a gamma distribution with
@@ -268,9 +270,9 @@ the following parameters:
 
 ``` r
 (theta = a$var/a$mean)
-#> [1] 605.7632
+#> [1] 605.7539
 (alpha = a$mean/theta)
-#> [1] 0.02681551
+#> [1] 0.02681632
 ```
 
 ## Pareto Distribution
@@ -442,7 +444,10 @@ In principal, the value of concentration of bacteria has support on the
 entire positive real number line. It is only because of the limitations
 of our data that we have a positive minimum.
 
-\#\#\#Fitting the Pareto Distribution \#\#\#\# Fitting Based on Moments
+### Fitting the Pareto Distribution
+
+#### Fitting Based on Moments
+
 Some comments on closed-form maximum likelihood estimates based on
 sample moments can be found here:
 (<https://stats.stackexchange.com/questions/27426/how-do-i-fit-a-set-of-data-to-a-pareto-distribution-in-r>)
@@ -463,7 +468,7 @@ pareto.MLE <- function(X)
 }
 
 (moment_parms <- pareto.MLE(coli_data$ColiVal_2))
-#> [1] 0.5506077 0.8149144
+#> [1] 0.5335117 0.7942523
 ```
 
 #### Fitting the Pareto with `VGAM`
@@ -481,7 +486,7 @@ vgam_parms <- exp(coef(paretofit))
 names(vgam_parms) <- c('Scale', 'Shape')
 vgam_parms
 #>     Scale     Shape 
-#> 0.1411954 0.4857666
+#> 0.1419035 0.4863478
 ```
 
 Given scaling issues, it is difficult to compare these three model fits
@@ -514,7 +519,7 @@ f_mle <- fitdist(coli_data$ColiVal_2, "paretoII",
 cat('\n')
 (fd_parms <- f_mle$estimate[c(2,1)])
 #>     scale     shape 
-#> 0.1411440 0.4856808
+#> 0.1419263 0.4863669
 ```
 
 ##### Quantile Matching
@@ -686,7 +691,9 @@ like the curve fit to the median and 90th percentile.
 
 ### Means and Variances
 
-These don’t work very well for these estimated sets of parameters.
+These don’t work very well for these estimated sets of parameters
+because estimated parameters are low enough so both the mean and the
+variance of the fitted Pareto distribution are unbounded.
 
 ``` r
 est_pareto_mean <- function(scale, shape, location){
@@ -708,7 +715,7 @@ est_pareto_variance <- function(scale, shape, location){
 ``` r
 fd_parms
 #>     scale     shape 
-#> 0.1411440 0.4856808
+#> 0.1419263 0.4863669
 est_pareto_mean(fd_parms[[1]], fd_parms[[2]], 0.5)
 #> [1] NaN
 est_pareto_variance(fd_parms[[1]], fd_parms[[2]], 0.5)

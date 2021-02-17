@@ -1,7 +1,7 @@
 ---
 title: "Examining Distribution of Shellfish Pathogen Data"
 author: "Curtis C. Bohlen, Casco Bay Estuary Partnership."
-date: "11/14/2020"
+date: "02/10/2021"
 output:
   github_document:
     toc: true
@@ -318,7 +318,7 @@ principal, the value of concentration of bacteria has support on the entire
 positive real number line.  It is only because of the limitations of our data
 that we have a positive minimum.
 
-###Fitting the Pareto Distribution
+### Fitting the Pareto Distribution
 #### Fitting Based on Moments
 Some comments on closed-form maximum likelihood estimates based on sample
 moments can be found here: 
@@ -518,7 +518,9 @@ them at slightly higher values.  The revised curve looks a LOT like the curve
 fit to the median and 90th percentile.
 
 ### Means and Variances
-These don't work very well for these estimated sets of parameters.
+These don't work very well for these estimated sets of parameters because
+estimated parameters are low enough so both the mean and the variance of the
+fitted Pareto distribution are unbounded.
 ```{r}
 est_pareto_mean <- function(scale, shape, location){
   if_else(shape > 1,

@@ -1,7 +1,7 @@
 Analysis of Shellfish Pathogen Data
 ================
 Curtis C. Bohlen, Casco Bay Estuary Partnership.
-11/14/2020
+02/17/2021
 
 -   [Introduction](#introduction)
 -   [Relevant Standards](#relevant-standards)
@@ -61,25 +61,20 @@ Curtis C. Bohlen, Casco Bay Estuary Partnership.
 Exploratory analysis highlights the extreme skewness of the distribution
 of bacteria data, both here with the shellfish -related data collected
 by DMR, and with the data related to recreational beaches, collected by
-towns, and managed by DEP.
-
-Skewness means these data are difficult to analyze with any authority,
-and so a degree of humility is called for in interpreting any analyses.
+towns, and managed by DEP. Skewness means these data are difficult to
+analyze with any authority, and so a degree of humility is called for in
+interpreting any analyses.
 
 Our primary goal is to be able to assess if there are important
 predictors of elevated bacteria levels that we can discern, and
 especially to identify if some sites are unusually vulnerable to
-elevated bacteria levels.
+elevated bacteria levels. Here we follow a strategy used in looking at
+the Beaches data, of looking at several imperfect modeling strategies to
+examine patterns.
 
-Here we follow a strategy used in looking at the Beaches data, of
-looking at several imperfect modeling strategies to examine patterns.
-
-The challenge is the relatively low sample sizes at each site, and the
-very heavy tails expected based on exploratory data analysis.
-
-Other notebooks will directly address modeling of exceedences of
-relevant standards, and examination of some covariates. here we focus on
-site to site variation.
+Another notebook will directly address modeling of exceedences of
+relevant standards. Here we focus on site to site variation, and
+relationships to a few covariates.
 
 # Relevant Standards
 
@@ -237,7 +232,7 @@ coli_data %>%
   pull(ColiVal_ml) %>%
   summary
 #>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-#>  0.5518  0.5997  0.6116  0.6115  0.6230  0.6816
+#>  0.5393  0.5997  0.6112  0.6114  0.6226  0.6860
 ```
 
 So, our (lognormal) based estimator for censored values estimates a
@@ -385,8 +380,8 @@ paretofit = vglm(ColiVal_ml~ 1, paretoII(location = 0) , data = coli_data)
 parms <- exp(coef(paretofit))
 names(parms) <- c('Scale', 'Shape')
 parms
-#>     Scale     Shape 
-#> 1.3904942 0.9277327
+#>    Scale    Shape 
+#> 1.390057 0.927623
 #predict(paretofit, newdata = data.frame(x = 1))
 ```
 
@@ -471,12 +466,12 @@ cat('\nNon-detects at maximum likelihood estimator\n')
 #> Non-detects at maximum likelihood estimator
 summary(coli_data$ColiVal_ml)
 #>      Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
-#>    0.5518    0.6095    0.6350   16.3187    4.0000 1600.0000
+#>    0.5393    0.6093    0.6350   16.3186    4.0000 1600.0000
 cat('\n     Geometric Mean\n')
 #> 
 #>      Geometric Mean
 exp(mean(log(coli_data$ColiVal_ml)))
-#> [1] 1.887425
+#> [1] 1.887169
 ```
 
 Note that the medians are right at the detection limits (or our
@@ -584,8 +579,8 @@ anova(test_lm)
 #> 
 #> Response: log(ColiVal_ml)
 #>             Df  Sum Sq Mean Sq F value    Pr(>F)    
-#> Station    237  2685.4  11.331  5.2119 < 2.2e-16 ***
-#> Residuals 9161 19915.8   2.174                      
+#> Station    237  2684.9 11.3287  5.2101 < 2.2e-16 ***
+#> Residuals 9161 19919.6  2.1744                      
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ```
@@ -679,11 +674,11 @@ anova(rain_lm_1, rain_lm_2, rain_lm_3, rain_lm_4, rain_lm_5)
 #> Model 4: log(ColiVal_ml) ~ Station + Log1Precip + Log1Precip_d1
 #> Model 5: log(ColiVal_ml) ~ Station + Log1Precip + Log1Precip_d1 + Log1Precip_d2
 #>   Res.Df   RSS Df Sum of Sq        F Pr(>F)    
-#> 1   9158 19261                                 
-#> 2   9158 18879  0    381.74                    
-#> 3   9158 19881  0  -1002.22                    
-#> 4   9157 18334  1   1546.87 772.7061 <2e-16 ***
-#> 5   9156 18329  1      5.15   2.5748 0.1086    
+#> 1   9158 19264                                 
+#> 2   9158 18884  0    379.95                    
+#> 3   9158 19885  0  -1000.81                    
+#> 4   9157 18339  1   1545.76 771.9406 <2e-16 ***
+#> 5   9156 18334  1      5.12   2.5583 0.1098    
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 rm(rain_lm_1, rain_lm_2, rain_lm_3, rain_lm_4, rain_lm_5)
@@ -701,9 +696,9 @@ rain_lm <- lm(log(ColiVal_ml) ~ Station + Log1Precip +
 
 ``` r
 summary(rain_lm)$coefficients[239:240,]
-#>                Estimate Std. Error  t value      Pr(>|t|)
-#> Log1Precip    0.2338579 0.01417913 16.49310  3.025894e-60
-#> Log1Precip_d1 0.3146125 0.01462635 21.50997 3.676601e-100
+#>                Estimate Std. Error t value      Pr(>|t|)
+#> Log1Precip    0.2339226 0.01418108 16.4954  2.915961e-60
+#> Log1Precip_d1 0.3143605 0.01462836 21.4898 5.561366e-100
 ```
 
 So conditions are more dependent on the prior day’s rainfall.
@@ -1467,7 +1462,7 @@ kruskal.test(ColiVal_ml ~ Station, data = coli_data)
 #>  Kruskal-Wallis rank sum test
 #> 
 #> data:  ColiVal_ml by Station
-#> Kruskal-Wallis chi-squared = 892.26, df = 237, p-value < 2.2e-16
+#> Kruskal-Wallis chi-squared = 875.44, df = 237, p-value < 2.2e-16
 ```
 
 Although the Kruskal-Wallis test is not strictly a comparison of
