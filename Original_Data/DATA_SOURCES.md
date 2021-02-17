@@ -1,5 +1,3 @@
-Source: Maine Department of Marine Resources (DMR) Bureau of Public Health
-
 # Primary Data
 Curtis C. Bohlen received an e-mail From Benjamin Wahle of DMR on November 27,
 2019, containing the following file: "Casco Bay WQ 15 19.csv"  This file
@@ -14,27 +12,14 @@ After accessing several years' worth of "P90" data from DMR's public data
 repositories,  we realized the data were not complete enough for our analytic 
 needs, and in particular, that the mapped p90 values released each year were
 based on the most recent 30 observations at each site, which extend over
-multiple years.  thus the annual "p90" data are not sequentially independent.
+multiple years.  Thus the annual "p90" data are not sequentially independent.
 
 We ended up using the "p90" data principally for it's geographic content. 
 Data was accessed as follows:
 
 ## 2018 "P90" data
-2018 P90 Data URL: https://dmr-maine.opendata.arcgis.com/datasets/mainedmr-public-health-2018-p90-scores/data
-
-Nominal Date: 9/30/2019
-
-DMR "Last updated": 2 months ago
-
-Date Accessed: November 25th, 2019
-
-Accessed by: Tyler Walsh
-
-As of November 25th, 2019 spreadsheet, KML, and shapefiles of the full 2018 P90
-data set were downloaded by clicking on the "Download" button on the top right
-of the "Data" tab (it appears this can also be accessed on the "Overview" tab as
-well).
-
+2018 P90 Data URL:
+https://dmr-maine.opendata.arcgis.com/datasets/mainedmr-public-health-2018-p90-scores/data
 
 ## Older "P90" data
 P90 datasets prior to 2018 could not be accessed from that site. Years 2017 and
@@ -44,16 +29,17 @@ be accessed by editing the URL for the 2018 data in the obvious way)
 2017 P90 Data URL: (https://dmr-maine.opendata.arcgis.com/datasets/mainedmr-public-health-2017-p90-scores)
 
 2016 P90 Data URL: (https://dmr-maine.opendata.arcgis.com/datasets/mainedmr-public-health-2016-p90-scores)
-But clicking on the 'Download" tabs from those pages had inconsistent effects, 
-suggesting there was a server malfunction occurring.
 
-We requested data from DMR via e-mail.  Curtis C. Bohlen received an E-mail from
-Benjamin Wahle of DMR on November 26, 2019, containing the following three files:
+But clicking on the 'Download" tabs from those pages did not work.
+
+We requested the historical P90 data from DMR via e-mail.  Curtis C. Bohlen 
+received an E-mail from Benjamin Wahle of DMR on November 26, 2019, containing 
+the following two files:
+
 "2016 p90 for CBEP.xlsx"
 "2017 p90 for CBEP.xlsx"
 
-
-## Weather Data
+# Weather Data
 CBEP uses a custom Python program to download data from NOAA's online data
 repositories.  Specifically, data were accessed through NOAA's National Centers
 for Environmental Information.
@@ -70,15 +56,14 @@ Long Creek Watershed Management District data.  The version of the data included
 here was derived from that download by selecting data from the years 2015 through
 2019.
 
-### Units
+## Units
 Data is in SI units, except that NOAA provides some data in tenths of the
 nominal units.  This is not well documented through the API, but obvious in 
 context. Temperatures are reported in tenths of degrees C, and precipitation in
-tenths of a millimeter.  For this analysis, we disregard trace rainfall
+tenths of a millimeter.  For this analysis, we disregard trace rainfall.
 
-
-### Growing Areas
-The Shapefile `MaineDMR_Public_Health_-_Current_NSSP_Classifications-shp` was 
+# Growing Areas
+The shapefile `MaineDMR_Public_Health_-_Current_NSSP_Classifications-shp` was 
 downloaded from DMR's Open Data Portal here:
 https://dmr-maine.opendata.arcgis.com/datasets/mainedmr-public-health-current-nssp-classifications
 By Curtis C. Bohlen on February 12, 2021.
