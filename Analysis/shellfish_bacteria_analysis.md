@@ -119,12 +119,7 @@ library(readr)
 library(fitdistrplus)  # For cullen-fray graph etc.
 #> Loading required package: MASS
 #> Loading required package: survival
-library(actuar)        # For a particular version of Pareto Distribution fxns
-#> 
-#> Attaching package: 'actuar'
-#> The following object is masked from 'package:grDevices':
-#> 
-#>     cm
+
 library(tidyverse)  # Loads another `select()`
 #> -- Attaching packages --------------------------------------- tidyverse 1.3.0 --
 #> v ggplot2 3.3.3     v dplyr   1.0.3
@@ -137,12 +132,7 @@ library(tidyverse)  # Loads another `select()`
 #> x dplyr::select() masks MASS::select()
 
 library(emmeans)   # For marginal means
-#> 
-#> Attaching package: 'emmeans'
-#> The following object is masked from 'package:actuar':
-#> 
-#>     emm
-library(mblm)      # for the Thiel-Sen estimators -- not really successful here
+
 library(VGAM)      # For Pareto GLMs and estimation.
 #> Loading required package: stats4
 #> Loading required package: splines
@@ -151,10 +141,6 @@ library(VGAM)      # For Pareto GLMs and estimation.
 #> The following object is masked from 'package:tidyr':
 #> 
 #>     fill
-#> The following objects are masked from 'package:actuar':
-#> 
-#>     dgumbel, dlgamma, dpareto, pgumbel, plgamma, ppareto, qgumbel,
-#>     qlgamma, qpareto, rgumbel, rlgamma, rpareto
 library(mgcv)      # For GAMs, here used principally for hierarchical models
 #> Loading required package: nlme
 #> 
@@ -168,16 +154,6 @@ library(mgcv)      # For GAMs, here used principally for hierarchical models
 #> The following object is masked from 'package:VGAM':
 #> 
 #>     s
-
-library(GGally)
-#> Registered S3 method overwritten by 'GGally':
-#>   method from   
-#>   +.gg   ggplot2
-#> 
-#> Attaching package: 'GGally'
-#> The following object is masked from 'package:emmeans':
-#> 
-#>     pigs
 
 library(CBEPgraphics)
 load_cbep_fonts()
@@ -251,7 +227,7 @@ ggplot(coli_data, aes(x = ColiVal, y = ColiVal_ml, color = LCFlag)) +
 #> Warning: Removed 1405 rows containing missing values (geom_point).
 ```
 
-<img src="shellfish_bacteria_analysis_files/figure-gfm/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
+<img src="shellfish_bacteria_analysis_files/figure-gfm/plot_censored-1.png" style="display: block; margin: auto;" />
 
 Almost all censored values were at 2
 
@@ -261,7 +237,7 @@ coli_data %>%
   pull(ColiVal_ml) %>%
   summary
 #>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-#>  0.5462  0.5995  0.6113  0.6113  0.6230  0.6890
+#>  0.5518  0.5997  0.6116  0.6115  0.6230  0.6816
 ```
 
 So, our (lognormal) based estimator for censored values estimates a
@@ -348,13 +324,13 @@ coli_data <- coli_data %>%
 
 # Preliminary Graphics
 
-## Histogram
-
 **Critical levels (Reminder)**  
 Geometric Mean include:  
  &lt;  = 14 and  &lt;  = 88  
 and for the p90  
  &lt; 31 and  &lt;  = 16
+
+## Histogram
 
 ``` r
 ggplot(coli_data, aes(ColiVal_ml)) +
@@ -369,7 +345,7 @@ ggplot(coli_data, aes(ColiVal_ml)) +
 #> `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 ```
 
-<img src="shellfish_bacteria_analysis_files/figure-gfm/histograms-1.png" style="display: block; margin: auto;" />
+<img src="shellfish_bacteria_analysis_files/figure-gfm/histogram-1.png" style="display: block; margin: auto;" />
 As for the Beaches data:  
 1. Non detects are highly abundant.  
 2. Violations of standards are relatively rare.
@@ -395,7 +371,7 @@ ggplot(coli_data, aes(ColiVal_ml)) +
 #> Warning: Removed 3 rows containing missing values (geom_bar).
 ```
 
-<img src="shellfish_bacteria_analysis_files/figure-gfm/histograms_double_log-1.png" style="display: block; margin: auto;" />
+<img src="shellfish_bacteria_analysis_files/figure-gfm/histogram_double_log-1.png" style="display: block; margin: auto;" />
 And that looks very much like a linear relationship on a log-log plot,
 suggesting a gamma or Pareto distribution is appropriate. Prior
 exploratory analysis suggests a Pareto Distribution is better, but that
@@ -410,7 +386,7 @@ parms <- exp(coef(paretofit))
 names(parms) <- c('Scale', 'Shape')
 parms
 #>     Scale     Shape 
-#> 1.3898983 0.9275867
+#> 1.3904942 0.9277327
 #predict(paretofit, newdata = data.frame(x = 1))
 ```
 
@@ -451,23 +427,6 @@ gm_mean <- function(x) {
 }
 ```
 
-``` r
-gm_mean(coli_data$ColiVal_ml)
-#> [1] 1.887065
-tmp <- coli_data %>%
-  group_by(YEAR) %>%
-  summarize(gm = gm_mean(ColiVal_ml))
-tmp
-#> # A tibble: 5 x 2
-#>    YEAR    gm
-#> * <dbl> <dbl>
-#> 1  2015  1.72
-#> 2  2016  1.67
-#> 3  2017  2.69
-#> 4  2018  1.82
-#> 5  2019  1.69
-```
-
 ### Plot
 
 ``` r
@@ -477,8 +436,7 @@ ggplot(coli_data, aes(YEAR, ColiVal_ml)) +
   ## applying the transformation to the y axis, thus implicitly calculating the
   ## geometric mean.
   stat_summary(fun = mean, fill = 'red', shape = 23) +
-  ## The hand calculated points match, so are unneeded.
-  ## geom_point(data = tmp, mapping = aes(YEAR, gm), color = 'blue', size = 3) +
+
   geom_hline(yintercept = 14, lty = 3, col = 'blue') +
   geom_hline(yintercept = 31, lty = 2, col = 'blue') +
   geom_hline(yintercept = 88, lty = 3) +
@@ -513,12 +471,12 @@ cat('\nNon-detects at maximum likelihood estimator\n')
 #> Non-detects at maximum likelihood estimator
 summary(coli_data$ColiVal_ml)
 #>      Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
-#>    0.5462    0.6094    0.6345   16.3186    4.0000 1600.0000
+#>    0.5518    0.6095    0.6350   16.3187    4.0000 1600.0000
 cat('\n     Geometric Mean\n')
 #> 
 #>      Geometric Mean
 exp(mean(log(coli_data$ColiVal_ml)))
-#> [1] 1.887065
+#> [1] 1.887425
 ```
 
 Note that the medians are right at the detection limits (or our
@@ -585,8 +543,6 @@ plt
 
 <img src="shellfish_bacteria_analysis_files/figure-gfm/plot_summaries-1.png" style="display: block; margin: auto;" />
 
-Note the scaling of naive 95% CIs with scale.
-
 # Modeling
 
 Overall, we focus on models that explore differences among sampling
@@ -628,8 +584,8 @@ anova(test_lm)
 #> 
 #> Response: log(ColiVal_ml)
 #>             Df  Sum Sq Mean Sq F value    Pr(>F)    
-#> Station    237  2687.8 11.3411  5.2162 < 2.2e-16 ***
-#> Residuals 9161 19917.8  2.1742                      
+#> Station    237  2685.4  11.331  5.2119 < 2.2e-16 ***
+#> Residuals 9161 19915.8   2.174                      
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ```
@@ -687,7 +643,7 @@ plt +
 #> Warning: Removed 238 rows containing missing values (geom_segment).
 ```
 
-<img src="shellfish_bacteria_analysis_files/figure-gfm/unnamed-chunk-14-1.png" style="display: block; margin: auto;" />
+<img src="shellfish_bacteria_analysis_files/figure-gfm/plot_lm_emms_plus-1.png" style="display: block; margin: auto;" />
 
 So our model regenerates the observed geometric means, as expected.
 
@@ -723,11 +679,11 @@ anova(rain_lm_1, rain_lm_2, rain_lm_3, rain_lm_4, rain_lm_5)
 #> Model 4: log(ColiVal_ml) ~ Station + Log1Precip + Log1Precip_d1
 #> Model 5: log(ColiVal_ml) ~ Station + Log1Precip + Log1Precip_d1 + Log1Precip_d2
 #>   Res.Df   RSS Df Sum of Sq        F Pr(>F)    
-#> 1   9158 19265                                 
-#> 2   9158 18882  0    382.55                    
-#> 3   9158 19883  0  -1000.41                    
-#> 4   9157 18340  1   1543.14 770.6293 <2e-16 ***
-#> 5   9156 18334  1      5.34   2.6653 0.1026    
+#> 1   9158 19261                                 
+#> 2   9158 18879  0    381.74                    
+#> 3   9158 19881  0  -1002.22                    
+#> 4   9157 18334  1   1546.87 772.7061 <2e-16 ***
+#> 5   9156 18329  1      5.15   2.5748 0.1086    
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 rm(rain_lm_1, rain_lm_2, rain_lm_3, rain_lm_4, rain_lm_5)
@@ -746,8 +702,8 @@ rain_lm <- lm(log(ColiVal_ml) ~ Station + Log1Precip +
 ``` r
 summary(rain_lm)$coefficients[239:240,]
 #>                Estimate Std. Error  t value      Pr(>|t|)
-#> Log1Precip    0.2334460 0.01418118 16.46168  5.012316e-60
-#> Log1Precip_d1 0.3144252 0.01462846 21.49407 5.094707e-100
+#> Log1Precip    0.2338579 0.01417913 16.49310  3.025894e-60
+#> Log1Precip_d1 0.3146125 0.01462635 21.50997 3.676601e-100
 ```
 
 So conditions are more dependent on the prior day’s rainfall.
@@ -804,7 +760,7 @@ plt +
 #> Warning: Removed 238 rows containing missing values (geom_segment).
 ```
 
-<img src="shellfish_bacteria_analysis_files/figure-gfm/unnamed-chunk-18-1.png" style="display: block; margin: auto;" />
+<img src="shellfish_bacteria_analysis_files/figure-gfm/plot_rain_lm_emms_plus-1.png" style="display: block; margin: auto;" />
 The match is not perfect anymore, as expected since the MLEs now are
 corrected for recent rainfall, but the correlation is close. Note that
 the confidence intervals are wider than the scatter among geometric
@@ -933,7 +889,7 @@ plt +
 #> Warning: Removed 238 rows containing missing values (geom_segment).
 ```
 
-<img src="shellfish_bacteria_analysis_files/figure-gfm/plot_glm_emms_2-1.png" style="display: block; margin: auto;" />
+<img src="shellfish_bacteria_analysis_files/figure-gfm/plot_glm_emms_plus-1.png" style="display: block; margin: auto;" />
 So the the predicted values still match the observed geometric means.
 Note that these geometric means are slightly higher than the ones
 produced by fitting our non-detect corrected data, or fitting the
@@ -1040,7 +996,7 @@ plt <- ggplot(emms2, aes(geom_mean, Station)) +
 plt
 ```
 
-<img src="shellfish_bacteria_analysis_files/figure-gfm/plot_rainfall_emms-1.png" style="display: block; margin: auto;" />
+<img src="shellfish_bacteria_analysis_files/figure-gfm/plot_rain_gam_emms-1.png" style="display: block; margin: auto;" />
 Qualitatively, that is similar to results from the prior model.
 
 ``` r
@@ -1051,7 +1007,7 @@ plt +
 #> Warning: Removed 238 rows containing missing values (geom_segment).
 ```
 
-<img src="shellfish_bacteria_analysis_files/figure-gfm/plot_glm_rain_with_geom_means-1.png" style="display: block; margin: auto;" />
+<img src="shellfish_bacteria_analysis_files/figure-gfm/plot_rain_gam_emms_plus-1.png" style="display: block; margin: auto;" />
 
 In this case, our estimated marginal means shifted below the observed
 geometric means. This is expected, as we have chosen to estimate
@@ -1101,7 +1057,7 @@ geometric mean levels of *E. coli* at the different stations.
 plot(grow_gam)
 ```
 
-<img src="shellfish_bacteria_analysis_files/figure-gfm/unnamed-chunk-23-1.png" style="display: block; margin: auto;" />
+<img src="shellfish_bacteria_analysis_files/figure-gfm/plot_grow_gam-1.png" style="display: block; margin: auto;" />
 This plot shows the magnitude of the random effects. IDeally, these
 residuals should be close to normally distributed. here we note that
 they are somewhat skewed, but not excessively so.
@@ -1148,7 +1104,7 @@ pwpp(myemms)
 #> Note: Use 'contrast(regrid(object), ...)' to obtain contrasts of back-transformed estimates
 ```
 
-<img src="shellfish_bacteria_analysis_files/figure-gfm/unnamed-chunk-25-1.png" style="display: block; margin: auto;" />
+<img src="shellfish_bacteria_analysis_files/figure-gfm/emms_grow_gam_prelim-1.png" style="display: block; margin: auto;" />
 
 ``` r
 rm(myemms)
@@ -1235,7 +1191,7 @@ and the correlations between them, while important, are not perfect.
 plot(month_gam)
 ```
 
-<img src="shellfish_bacteria_analysis_files/figure-gfm/diagnostics_month_2_gam-1.png" style="display: block; margin: auto;" />
+<img src="shellfish_bacteria_analysis_files/figure-gfm/diagnostics_month_gam-1.png" style="display: block; margin: auto;" />
 The random effects are again skewed.
 
 ``` r
@@ -1287,7 +1243,7 @@ pwpp(myemms)
 #> Note: Use 'contrast(regrid(object), ...)' to obtain contrasts of back-transformed estimates
 ```
 
-<img src="shellfish_bacteria_analysis_files/figure-gfm/unnamed-chunk-28-1.png" style="display: block; margin: auto;" />
+<img src="shellfish_bacteria_analysis_files/figure-gfm/emms_moth_gam_prelim-1.png" style="display: block; margin: auto;" />
 
 ``` r
 rm(myemms)
@@ -1358,7 +1314,7 @@ plt +
 #> Warning: Removed 12 rows containing missing values (geom_segment).
 ```
 
-<img src="shellfish_bacteria_analysis_files/figure-gfm/unnamed-chunk-29-1.png" style="display: block; margin: auto;" />
+<img src="shellfish_bacteria_analysis_files/figure-gfm/plot_month_emms_with-1.png" style="display: block; margin: auto;" />
 
 Estimated values are not exactly equal to observed geometric means. That
 is expected, since the model estimates are corrected for sampling
@@ -1385,7 +1341,7 @@ Recall that the linear predictor for our gamma GLM is the inverse.
 plot(doy_gam)
 ```
 
-<img src="shellfish_bacteria_analysis_files/figure-gfm/unnamed-chunk-30-1.png" style="display: block; margin: auto;" /><img src="shellfish_bacteria_analysis_files/figure-gfm/unnamed-chunk-30-2.png" style="display: block; margin: auto;" />
+<img src="shellfish_bacteria_analysis_files/figure-gfm/plot_doy_gam-1.png" style="display: block; margin: auto;" /><img src="shellfish_bacteria_analysis_files/figure-gfm/plot_doy_gam-2.png" style="display: block; margin: auto;" />
 
 ``` r
 summary(doy_gam)
@@ -1414,9 +1370,10 @@ summary(doy_gam)
 ```
 
 We want to compare predicted values and standard errors to observed
-values. I can use predict to get estimates, but I have to get them for
-all stations and average, requiring dubious use of weighted sum to
-generate an estimated standard error.
+values. We can use predict to get estimates, but we have to get them for
+all stations and average. The provided estimates of standard error,
+therefore, are not correct, as they track only between station error,
+not within station error.
 
 ``` r
 s <- unique(coli_data$Station)
@@ -1424,9 +1381,7 @@ l = length(s)
 df <- data.frame(DOY = rep(1:365, l), Station = rep(s, each = 365))
 
 p <- predict(doy_gam, newdata = df)
-```
 
-``` r
 p <- tibble(fit = p) %>%
   mutate(DOY = rep(1:365, l), 
          Station = rep(s, each = 365)) %>%
@@ -1449,7 +1404,7 @@ ggplot(coli_data, aes(DOY, ColiVal)) +
   scale_y_log10()
 ```
 
-<img src="shellfish_bacteria_analysis_files/figure-gfm/unnamed-chunk-34-1.png" style="display: block; margin: auto;" />
+<img src="shellfish_bacteria_analysis_files/figure-gfm/plot_doy_gam_predicts-1.png" style="display: block; margin: auto;" />
 
 ``` r
 emms5 <- summary(emmeans(doy_gam, 
@@ -1475,7 +1430,7 @@ plt <- ggplot(emms5, aes(DOY, geom_mean)) +
   scale_color_manual(values = cbep_colors(), name = '', 
                      labels = c('Observed', 'Below Detection')) +
   ylab('Geometric Mean E. coli \n(MPN CFU/100 ml)') +
-  xlab('DMR Growing Area') +
+  xlab('Day of the Year') +
   
   theme_cbep(base_size = 12) +
   theme(legend.position = 'bottom')
@@ -1512,21 +1467,17 @@ kruskal.test(ColiVal_ml ~ Station, data = coli_data)
 #>  Kruskal-Wallis rank sum test
 #> 
 #> data:  ColiVal_ml by Station
-#> Kruskal-Wallis chi-squared = 916, df = 237, p-value < 2.2e-16
+#> Kruskal-Wallis chi-squared = 892.26, df = 237, p-value < 2.2e-16
 ```
 
 Although the Kruskal-Wallis test is not strictly a comparison of
-medians, it’s close, so we look at medians.
+medians, it’s close, so we look at medians again.
 
 ``` r
-coli_data %>%
-  mutate(Station = fct_reorder(Station, ColiVal_ml)) %>%
-  group_by(Station) %>%
-  summarize(Median = median(ColiVal_ml),
-            iqr = IQR(ColiVal_ml),
-            p90 = quantile(ColiVal_ml, .9)) %>%
+sum_data %>%
+  mutate(Station = fct_reorder(Station, median2)) %>%
   
-  ggplot(aes(Median, Station)) +
+  ggplot(aes(median2, Station)) +
   geom_point() +
 
   scale_x_log10() + 
@@ -1543,9 +1494,9 @@ coli_data %>%
 
 <img src="shellfish_bacteria_analysis_files/figure-gfm/summary_again-1.png" style="display: block; margin: auto;" />
 
-Note how many of those medians are at discrete values determined by the
-methods involved. **Most** sites **almost always** are below detection
-limits or at very low levels.
+Note how many of those medians are at (or very close to) discrete values
+determined by the methods involved. **Most** sites **almost always** are
+below detection limits or at very low levels.
 
 ### Pairwise Wilcoxon test
 
@@ -1557,7 +1508,7 @@ saying exact p values are not possible with tied values – of which we
 have many.
 
 The giant cross classification matrix is hard to parse, so this is not
-especially useful without a lot more work. WE don’t need it, as results
+especially useful without a lot more work. We don’t need it, as results
 will generally confirm that some Stations are different from others,
 which we know.
 
