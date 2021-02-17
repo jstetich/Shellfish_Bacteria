@@ -58,12 +58,12 @@ p90_data_2018 <- read_csv(path) %>%
   rename(Count=Count_, MAX=MAX_) %>%
   mutate(Year = 2018)
 ```
+
 ## Finalize Combined p90 Data
 ```{r}
 p90_data <- rbind(p90_data_2016,p90_data_2017, p90_data_2018) %>%
   mutate_at(c('Station','Class', 'Grow_Area'), factor)
 ```
-
 
 # Extract list of Locations / Stations
 ```{r}

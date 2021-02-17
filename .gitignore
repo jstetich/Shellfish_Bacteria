@@ -35,4 +35,11 @@ Original_Data/DATA_SOURCES.html
 **/drafts
 **/sources
 **/methods
+**/testing
 **/omitfromgit
+
+## Omit Derived GIS Files
+/Derived_Data/GIS_Data/Interim_Data
+/Derived_Data/GIS_Data/imperv.gdb
+
+
