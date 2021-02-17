@@ -17,9 +17,10 @@ multiple years.  Thus the annual "p90" data are not sequentially independent.
 We ended up using the "p90" data principally for it's geographic content. 
 Data was accessed as follows:
 
-## 2018 "P90" data
-2018 P90 Data URL:
+## "Public" 2018 "P90" data
+2018 P90 Data were downloaded from the following URL:
 https://dmr-maine.opendata.arcgis.com/datasets/mainedmr-public-health-2018-p90-scores/data
+as a Shapefile and a CSV file.
 
 ## Older "P90" data
 P90 datasets prior to 2018 could not be accessed from that site. Years 2017 and
