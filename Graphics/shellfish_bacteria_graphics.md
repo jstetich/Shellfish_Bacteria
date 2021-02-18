@@ -437,7 +437,11 @@ boot_one <- function (dat, fun = "mean", sz = 1000, width = 0.95) {
 ``` r
 boot_one(rpois(30, 2))
 #>     2.5%    97.5% 
+<<<<<<< HEAD
 #> 1.499167 2.434167
+=======
+#> 1.733333 2.666667
+>>>>>>> 92464bd7346e20e0631cca22c24b16eb314d9bfc
 ```
 
 We need to first calculate confidence intervals on a log scale, then
