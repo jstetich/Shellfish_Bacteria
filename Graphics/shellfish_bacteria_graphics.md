@@ -279,7 +279,7 @@ plt <- ggplot(coli_data, aes(YEAR, ColiVal)) +
   ## applying the transformation to the y axis, thus implicitly calculating the
   ## geometric mean.
   stat_summary(fun = mean, 
-               color = 'red', shape = 15) +
+               fill = 'red', shape = 22) +
   
   scale_color_manual(values = cbep_colors(), name = '',
                      labels = c('Observed', 'Below Detection')) +
@@ -294,7 +294,7 @@ plt <- ggplot(coli_data, aes(YEAR, ColiVal)) +
   theme_cbep(base_size = 12) +
   theme(legend.position = "bottom") +
   
-  guides(color = guide_legend(override.aes = list(alpha = c(0.5,0.751) ) ))
+  guides(color = guide_legend(override.aes = list(alpha = c(0.5,0.75) ) ))
 ```
 
 ``` r
@@ -328,7 +328,7 @@ plt <- ggplot(coli_data, aes(YEAR, ColiVal, group = YEAR)) +
   ## applying the transformation to the y axis, thus implicitly calculating the
   ## geometric mean.
   stat_summary(fun = mean, 
-               color = 'red', shape = 15) +
+               fill = 'red', shape = 22) +
   xlab('') +
   ylab(expression(atop(italic('E. coli') ~ ' Concentration',
                   '(CFU / 100ml, MPN)'))) +
@@ -367,7 +367,7 @@ plt <- ggplot(coli_data, aes(YEAR, ColiVal, group = YEAR)) +
   ## applying the transformation to the y axis, thus implicitly calculating the
   ## geometric mean.
   stat_summary(fun = mean, 
-               color = 'red', shape = 15) +
+               fill = 'red', shape = 22) +
   xlab('') +
   ylab(expression(atop(italic('E. coli') ~ ' Concentration',
                   '(CFU / 100ml, MPN)'))) +
@@ -392,7 +392,7 @@ great strategy.
 ``` r
 plt <- ggplot(sum_data, aes(gmean1, Station)) + 
   geom_pointrange(aes(xmin = L_CI1, xmax = U_CI1),
-                  color = cbep_colors()[4],
+                  color = cbep_colors()[6],
                   size = .2) +
   scale_x_log10(breaks = c(1,3,10,30, 100)) +
   
@@ -437,7 +437,7 @@ boot_one <- function (dat, fun = "mean", sz = 1000, width = 0.95) {
 ``` r
 boot_one(rpois(30, 2))
 #>     2.5%    97.5% 
-#> 1.366667 2.266667
+#> 1.499167 2.434167
 ```
 
 We need to first calculate confidence intervals on a log scale, then
@@ -504,7 +504,7 @@ effort….
 ``` r
 plt <- ggplot(sum_data, aes(gmean1, Station)) + 
   geom_pointrange(aes(xmin = lower1, xmax = upper1),
-                  color = cbep_colors()[4],
+                  color = cbep_colors()[6],
                   size = .2) +
   scale_x_log10(breaks = c(1,3,10,30, 100)) +
   
@@ -589,7 +589,7 @@ emms <- summary(emmeans(gamma_glm, "Station", type = 'response')) %>%
 ``` r
 plt <- ggplot(emms, aes(geom_mean, Station)) + 
   geom_pointrange(aes(xmin = asymp.LCL, xmax = asymp.UCL),
-                  color = cbep_colors()[4],
+                  color = cbep_colors()[6],
                   size = .2) +
   scale_x_log10(breaks = c(1,3,10,30, 100)) +
   
@@ -653,7 +653,7 @@ plt <- ggplot(emms3, aes(GROW_AREA, geom_mean)) +
               alpha = 0.25) +
 
   geom_pointrange(aes(ymin = lower.CL, ymax = upper.CL),
-                  color = 'red', size = .75, shape = 15) +
+                  fill = 'red', size = .75, shape = 22) +
  
   scale_y_log10() +
   scale_color_manual(values = cbep_colors(), name = '', 
@@ -666,19 +666,19 @@ plt <- ggplot(emms3, aes(GROW_AREA, geom_mean)) +
   theme_cbep(base_size = 12) +
   theme(legend.position = 'bottom') +
   
-  guides(color = guide_legend(override.aes = list(alpha = c(0.5,0.751) ) ))
+  guides(color = guide_legend(override.aes = list(alpha = c(0.5,0.75) ) ))
 ```
 
 ``` r
  plt +  
   geom_hline(yintercept = 14, lty = 2) +
   annotate('text', x = 4.5, y = 17, 
-           size = 3, hjust = .75, label = "14 mpn") +
+           size = 3, hjust = 1, label = "14 mpn") +
   
  
   geom_hline(yintercept = 88, lty = 2) +
   annotate('text', x = 4.5, y = 110, 
-           size = 3, hjust = .75, label = "88 mpn") +
+           size = 3, hjust = 1, label = "88 mpn") +
 
 ggsave('figures/regions_jitter.pdf', device = cairo_pdf, 
        width = 5, height = 4)
@@ -695,7 +695,7 @@ plt <- ggplot(emms3, aes(GROW_AREA, geom_mean)) +
               fill = cbep_colors()[5]) +
 
   geom_pointrange(aes(ymin = lower.CL, ymax = upper.CL),
-                  color = 'red', size = .75, shape = 15) +
+                  fill = 'red', size = .75, shape = 22) +
  
   scale_y_log10() +
   scale_color_manual(values = cbep_colors(), name = '', 
@@ -758,7 +758,7 @@ plt <- ggplot(emms4, aes(Month, geom_mean)) +
                alpha = 0.25) +
 
   geom_pointrange(aes(ymin = lower.CL, ymax = upper.CL),
-                  color = 'red', size = .75, shape = 15) +
+                  fill = 'red', size = .75, shape = 22) +
  
   scale_y_log10() +
   scale_color_manual(values = cbep_colors(), name = '', 
@@ -771,7 +771,7 @@ plt <- ggplot(emms4, aes(Month, geom_mean)) +
   theme_cbep(base_size = 12) +
   theme(legend.position = 'bottom') +
   
-  guides(color = guide_legend(override.aes = list(alpha = c(0.5,0.751) ) ))
+  guides(color = guide_legend(override.aes = list(alpha = c(0.5,0.75) ) ))
 ```
 
 Add reference lines
@@ -802,7 +802,7 @@ plt <- ggplot(emms4, aes(Month, geom_mean)) +
               fill = cbep_colors()[5]) +
 
   geom_pointrange(aes(ymin = lower.CL, ymax = upper.CL),
-                  color = 'red', size = .75, shape = 15) +
+                  fill = 'red', size = .75, shape = 22) +
  
   scale_y_log10() +
   scale_color_manual(values = cbep_colors(), name = '', 
@@ -884,9 +884,9 @@ plt <- ggplot(emms5, aes(DOY, geom_mean)) +
   
   theme_cbep(base_size = 12) +
   theme(legend.position = 'bottom') +
-  theme(axis.text.x = element_text(hjust = 0.25)) +
+  theme(axis.text.x = element_text(size = 10, hjust = 0.25)) +
 
-  guides(color = guide_legend(override.aes = list(alpha = c(0.5,0.751) ) ))
+  guides(color = guide_legend(override.aes = list(alpha = c(0.5,0.75) ) ))
 ```
 
 Add reference lines
