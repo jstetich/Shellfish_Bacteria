@@ -226,7 +226,7 @@ plt <- ggplot(coli_data, aes(YEAR, ColiVal)) +
   ## applying the transformation to the y axis, thus implicitly calculating the
   ## geometric mean.
   stat_summary(fun = mean, 
-               color = 'red', shape = 15) +
+               fill = 'red', shape = 22) +
   
   scale_color_manual(values = cbep_colors(), name = '',
                      labels = c('Observed', 'Below Detection')) +
@@ -269,7 +269,7 @@ plt <- ggplot(coli_data, aes(YEAR, ColiVal, group = YEAR)) +
   ## applying the transformation to the y axis, thus implicitly calculating the
   ## geometric mean.
   stat_summary(fun = mean, 
-               color = 'red', shape = 15) +
+               fill = 'red', shape = 22) +
   xlab('') +
   ylab(expression(atop(italic('E. coli') ~ ' Concentration',
                   '(CFU / 100ml, MPN)'))) +
@@ -303,7 +303,7 @@ plt <- ggplot(coli_data, aes(YEAR, ColiVal, group = YEAR)) +
   ## applying the transformation to the y axis, thus implicitly calculating the
   ## geometric mean.
   stat_summary(fun = mean, 
-               color = 'red', shape = 15) +
+               fill = 'red', shape = 22) +
   xlab('') +
   ylab(expression(atop(italic('E. coli') ~ ' Concentration',
                   '(CFU / 100ml, MPN)'))) +
@@ -320,10 +320,10 @@ do not think the naive normal distribution error bars are especially accurate.
 We could use bootstrapped confidence intervals here, but as sample size for
 each station is moderate ($n \approx 30$), that is also not a great strategy.
 
-```{r plot_summaries, fig.height = 7}
+```{r plot_summaries, fig.height = 6}
 plt <- ggplot(sum_data, aes(gmean1, Station)) + 
   geom_pointrange(aes(xmin = L_CI1, xmax = U_CI1),
-                  color = cbep_colors()[4],
+                  color = cbep_colors()[6],
                   size = .2) +
   scale_x_log10(breaks = c(1,3,10,30, 100)) +
   
@@ -413,10 +413,10 @@ So our bootstrapped confidence intervals are extremely close to the normal
 approximation confidence intervals.  It probably was not worth the effort....
 
 ## Generate the Plot
-```{r station_bootstrap_graphics, fig.height = 7}
+```{r station_bootstrap_graphics, fig.height = 6}
 plt <- ggplot(sum_data, aes(gmean1, Station)) + 
   geom_pointrange(aes(xmin = lower1, xmax = upper1),
-                  color = cbep_colors()[4],
+                  color = cbep_colors()[6],
                   size = .2) +
   scale_x_log10(breaks = c(1,3,10,30, 100)) +
   
@@ -487,10 +487,10 @@ emms <- summary(emmeans(gamma_glm, "Station", type = 'response')) %>%
 ```
 
 #### Graphic
-```{r plot_glm_emms, fig.height = 7}
+```{r plot_glm_emms, fig.height = 6}
 plt <- ggplot(emms, aes(geom_mean, Station)) + 
   geom_pointrange(aes(xmin = asymp.LCL, xmax = asymp.UCL),
-                  color = cbep_colors()[4],
+                  color = cbep_colors()[6],
                   size = .2) +
   scale_x_log10(breaks = c(1,3,10,30, 100)) +
   
@@ -546,7 +546,7 @@ plt <- ggplot(emms3, aes(GROW_AREA, geom_mean)) +
               alpha = 0.25) +
 
   geom_pointrange(aes(ymin = lower.CL, ymax = upper.CL),
-                  color = 'red', size = .75, shape = 15) +
+                  fill = 'red', size = .75, shape = 22) +
  
   scale_y_log10() +
   scale_color_manual(values = cbep_colors(), name = '', 
@@ -567,12 +567,12 @@ plt <- ggplot(emms3, aes(GROW_AREA, geom_mean)) +
  plt +  
   geom_hline(yintercept = 14, lty = 2) +
   annotate('text', x = 4.5, y = 17, 
-           size = 3, hjust = .75, label = "14 mpn") +
+           size = 3, hjust = 1, label = "14 mpn") +
   
  
   geom_hline(yintercept = 88, lty = 2) +
   annotate('text', x = 4.5, y = 110, 
-           size = 3, hjust = .75, label = "88 mpn") +
+           size = 3, hjust = 1, label = "88 mpn") +
 
 ggsave('figures/regions_jitter.pdf', device = cairo_pdf, 
        width = 5, height = 4)
@@ -587,7 +587,7 @@ plt <- ggplot(emms3, aes(GROW_AREA, geom_mean)) +
               fill = cbep_colors()[5]) +
 
   geom_pointrange(aes(ymin = lower.CL, ymax = upper.CL),
-                  color = 'red', size = .75, shape = 15) +
+                  fill = 'red', size = .75, shape = 22) +
  
   scale_y_log10() +
   scale_color_manual(values = cbep_colors(), name = '', 
@@ -645,7 +645,7 @@ plt <- ggplot(emms4, aes(Month, geom_mean)) +
                alpha = 0.25) +
 
   geom_pointrange(aes(ymin = lower.CL, ymax = upper.CL),
-                  color = 'red', size = .75, shape = 15) +
+                  fill = 'red', size = .75, shape = 22) +
  
   scale_y_log10() +
   scale_color_manual(values = cbep_colors(), name = '', 
@@ -687,7 +687,7 @@ plt <- ggplot(emms4, aes(Month, geom_mean)) +
               fill = cbep_colors()[5]) +
 
   geom_pointrange(aes(ymin = lower.CL, ymax = upper.CL),
-                  color = 'red', size = .75, shape = 15) +
+                  fill = 'red', size = .75, shape = 22) +
  
   scale_y_log10() +
   scale_color_manual(values = cbep_colors(), name = '', 
@@ -765,7 +765,7 @@ plt <- ggplot(emms5, aes(DOY, geom_mean)) +
   
   theme_cbep(base_size = 12) +
   theme(legend.position = 'bottom') +
-  theme(axis.text.x = element_text(hjust = 0.25)) +
+  theme(axis.text.x = element_text(size = 10, hjust = 0.25)) +
 
   guides(color = guide_legend(override.aes = list(alpha = c(0.5,0.751) ) ))
 
