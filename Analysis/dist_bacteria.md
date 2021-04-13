@@ -38,7 +38,7 @@ Curtis C. Bohlen, Casco Bay Estuary Partnership.
 
 As part of exploratory data analysis, and specifically to provide
 insight into how best to handle non-detects and censored values, we want
-to understand the distribution of observations in the *E. coli*
+to understand the distribution of observations in the fecal coliforms
 shellfish bacteria data. Here we take a look at overall data
 distributions, to consider possible modeling strategies. Since the data
 distribution may also be shaped by the distribution of predictors, this
@@ -53,17 +53,22 @@ library(fitdistrplus)  # For cullen-fray graph etc.
 #> Loading required package: MASS
 #> Loading required package: survival
 library(actuar)        # For a particular version of Pareto Distribution fxns
+#> Warning: package 'actuar' was built under R version 4.0.5
 #> 
 #> Attaching package: 'actuar'
 #> The following object is masked from 'package:grDevices':
 #> 
 #>     cm
 library(tidyverse)  # Loads another `select()`
-#> -- Attaching packages --------------------------------------- tidyverse 1.3.0 --
-#> v ggplot2 3.3.3     v dplyr   1.0.3
-#> v tibble  3.0.5     v stringr 1.4.0
-#> v tidyr   1.1.2     v forcats 0.5.0
+#> Warning: package 'tidyverse' was built under R version 4.0.5
+#> -- Attaching packages --------------------------------------- tidyverse 1.3.1 --
+#> v ggplot2 3.3.3     v dplyr   1.0.6
+#> v tibble  3.1.2     v stringr 1.4.0
+#> v tidyr   1.1.3     v forcats 0.5.1
 #> v purrr   0.3.4
+#> Warning: package 'tidyr' was built under R version 4.0.5
+#> Warning: package 'dplyr' was built under R version 4.0.5
+#> Warning: package 'forcats' was built under R version 4.0.5
 #> -- Conflicts ------------------------------------------ tidyverse_conflicts() --
 #> x dplyr::filter() masks stats::filter()
 #> x dplyr::lag()    masks stats::lag()
@@ -92,6 +97,7 @@ library(VGAM)      # For Pareto GLMs and estimation.
 #>     qlgamma, qpareto, rgumbel, rlgamma, rpareto
 
 library(GGally)
+#> Warning: package 'GGally' was built under R version 4.0.5
 #> Registered S3 method overwritten by 'GGally':
 #>   method from   
 #>   +.gg   ggplot2
@@ -160,7 +166,7 @@ coli_data %>%
   pull(ColiVal_2) %>%
   summary
 #>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-#>  0.5335  0.5998  0.6115  0.6113  0.6228  0.6724
+#>  0.5530  0.5999  0.6112  0.6115  0.6229  0.6798
 ```
 
 So, our (lognormal) based estimator for censored values estimates a
@@ -259,10 +265,10 @@ The empirical moments are:
 (a <- with(coli_data, list(mean=mean(ColiVal_2, na.rm=TRUE),
                            var=var(ColiVal_2, na.rm=TRUE))))
 #> $mean
-#> [1] 16.24409
+#> [1] 16.2442
 #> 
 #> $var
-#> [1] 9839.918
+#> [1] 9839.914
 ```
 
 So, by the method of moments, we can examine a gamma distribution with
@@ -270,9 +276,9 @@ the following parameters:
 
 ``` r
 (theta = a$var/a$mean)
-#> [1] 605.7539
+#> [1] 605.7494
 (alpha = a$mean/theta)
-#> [1] 0.02681632
+#> [1] 0.0268167
 ```
 
 ## Pareto Distribution
@@ -468,7 +474,7 @@ pareto.MLE <- function(X)
 }
 
 (moment_parms <- pareto.MLE(coli_data$ColiVal_2))
-#> [1] 0.5335117 0.7942523
+#> [1] 0.5529578 0.8173746
 ```
 
 #### Fitting the Pareto with `VGAM`
@@ -486,7 +492,7 @@ vgam_parms <- exp(coef(paretofit))
 names(vgam_parms) <- c('Scale', 'Shape')
 vgam_parms
 #>     Scale     Shape 
-#> 0.1419035 0.4863478
+#> 0.1423264 0.4867115
 ```
 
 Given scaling issues, it is difficult to compare these three model fits
@@ -519,7 +525,7 @@ f_mle <- fitdist(coli_data$ColiVal_2, "paretoII",
 cat('\n')
 (fd_parms <- f_mle$estimate[c(2,1)])
 #>     scale     shape 
-#> 0.1419263 0.4863669
+#> 0.1422595 0.4866481
 ```
 
 ##### Quantile Matching
@@ -715,7 +721,7 @@ est_pareto_variance <- function(scale, shape, location){
 ``` r
 fd_parms
 #>     scale     shape 
-#> 0.1419263 0.4863669
+#> 0.1422595 0.4866481
 est_pareto_mean(fd_parms[[1]], fd_parms[[2]], 0.5)
 #> [1] NaN
 est_pareto_variance(fd_parms[[1]], fd_parms[[2]], 0.5)

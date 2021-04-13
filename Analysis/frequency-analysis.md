@@ -42,16 +42,16 @@ Curtis C. Bohlen, Casco Bay Estuary Partnership.
 
 # Introduction
 
-The bacteria data is highly skewed. We have found no ready way to
-estimate a geometric mean for these data in a robust way. The data
-appears distributed close to a Pareto distribution, which is highly
-skewed, with a heavy right tail. This distribution is likely to be
-difficult to model, so we can not readily estimate parameters, moments
-and other summary statistics.
+The bacteria data is highly skewed. We have found no ready way to model
+a geometric mean for these data in a robust way. The data appears
+distributed close to a Pareto distribution, which is highly skewed, with
+a heavy right tail. This distribution is likely to be difficult to
+model, so we can not readily estimate parameters, moments and other
+summary statistics.
 
 One possibility would be to run some sort of (generalized) linear model
-on the log of data, calculate means and medians, and back transform. I
-hope to explore both linear model approaches in another R Notebook.
+on the log of data, calculate means and medians, and back transform. We
+explore linear model approaches in another R Notebook.
 
 Here we take another approach, which is to focus on binomial,
 quasi-binomial, and multinomial proportional odds models to estimate
@@ -98,21 +98,27 @@ interval.
 A “90 day interval” might apply to a summer’s worth of data, but in most
 years that will only represent a handful of observations at each site,
 so it is of limited value. More seriously, the standard is written in
-terms of “enterococcus” bacteria, not the “*e. coli*” data used by DMR.
+terms of “enterococcus” bacteria, not the fecal coliform data used by
+DMR.
 
 # Load Libraries
 
 ``` r
 library(MASS)   # Load before tidyverse because it has a select() function
 library(mgcv)   # For GAMs and GAMMs; used her for seasonal smoothers
+#> Warning: package 'mgcv' was built under R version 4.0.5
 #> Loading required package: nlme
-#> This is mgcv 1.8-33. For overview type 'help("mgcv-package")'.
+#> This is mgcv 1.8-35. For overview type 'help("mgcv-package")'.
 library(tidyverse)
-#> -- Attaching packages --------------------------------------- tidyverse 1.3.0 --
+#> Warning: package 'tidyverse' was built under R version 4.0.5
+#> -- Attaching packages --------------------------------------- tidyverse 1.3.1 --
 #> v ggplot2 3.3.3     v purrr   0.3.4
-#> v tibble  3.0.5     v dplyr   1.0.3
-#> v tidyr   1.1.2     v stringr 1.4.0
-#> v readr   1.4.0     v forcats 0.5.0
+#> v tibble  3.1.2     v dplyr   1.0.6
+#> v tidyr   1.1.3     v stringr 1.4.0
+#> v readr   1.4.0     v forcats 0.5.1
+#> Warning: package 'tidyr' was built under R version 4.0.5
+#> Warning: package 'dplyr' was built under R version 4.0.5
+#> Warning: package 'forcats' was built under R version 4.0.5
 #> -- Conflicts ------------------------------------------ tidyverse_conflicts() --
 #> x dplyr::collapse() masks nlme::collapse()
 #> x dplyr::filter()   masks stats::filter()
@@ -121,6 +127,7 @@ library(tidyverse)
 
 library(readr)
 library(GGally)
+#> Warning: package 'GGally' was built under R version 4.0.5
 #> Registered S3 method overwritten by 'GGally':
 #>   method from   
 #>   +.gg   ggplot2
@@ -491,7 +498,7 @@ system.time(p90_open_glm_1 <- glm(p90_open  ~ station,
              data = freq_data,
              family=binomial(link=logit)))
 #>    user  system elapsed 
-#>    8.42    0.07    8.49
+#>    8.28    0.07    8.41
 ```
 
 ``` r
@@ -626,7 +633,7 @@ plt <- ggplot(p_res, aes(grow_area, prob)) +
   geom_hline(yintercept = 0.9, color = 'gray85', lty =2, size = 1) +
   
   ylab(expression(atop('Frequency of Meeting', 
-                           'P90 ' ~ italic('E. coli') ~ ' Standard'))) +
+                           'P90 ' ~ 'Fecal Coliforms' ~ ' Standard'))) +
   xlab('Maine DMR Growing Area') +
 
   theme_cbep(base_size = 12)
@@ -687,7 +694,7 @@ plt <- ggplot(mms, aes(month, prob)) +
   
   xlab('') + 
   ylab(expression(atop('Probability of Meeting', 
-                           'P90 ' ~ italic('E. coli') ~ ' Standard'))) +
+                           'P90 ' ~ 'Fecal Coliforms' ~ ' Standard'))) +
   
   ylim(0.75, 1.0) +
 
@@ -1136,7 +1143,7 @@ system.time(
                                          reverse = FALSE))
 )
 #>    user  system elapsed 
-#>    0.21    0.00    0.20
+#>    0.21    0.01    0.22
 ```
 
 ``` r
@@ -1208,7 +1215,7 @@ system.time(
                                          reverse = FALSE))
 )
 #>    user  system elapsed 
-#>    0.25    0.00    0.25
+#>    0.23    0.01    0.25
 ```
 
 ##### Compare Models
@@ -1371,7 +1378,7 @@ system.time(
                                          reverse = FALSE))
 )
 #>    user  system elapsed 
-#>    0.20    0.01    0.22
+#>    0.21    0.04    0.23
 ```
 
 ``` r
@@ -1421,7 +1428,7 @@ system.time(
                                          reverse = FALSE))
 )
 #>    user  system elapsed 
-#>    0.18    0.03    0.22
+#>    0.20    0.01    0.22
 ```
 
 ``` r

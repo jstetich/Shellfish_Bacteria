@@ -21,8 +21,8 @@ knitr::opts_chunk$set(fig.align = 'center',
 # Introduction
 As part of exploratory data analysis, and specifically to provide insight into
 how best to handle non-detects and censored values, we want to understand the
-distribution of observations in the *E. coli* shellfish bacteria data.  Here we
-take a look at overall data distributions, to consider possible modeling
+distribution of observations in the fecal coliforms shellfish bacteria data.
+Here we take a look at overall data distributions, to consider possible modeling
 strategies. Since the data distribution may also be shaped by the distribution
 of predictors, this analysis is exploratory only, and any distributional
 assumptions need to be confirmed in the model context.
