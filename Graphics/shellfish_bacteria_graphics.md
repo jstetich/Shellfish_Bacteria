@@ -286,7 +286,7 @@ plt <- ggplot(coli_data, aes(YEAR, ColiVal)) +
   
   
   xlab('') +
-  ylab(expression(atop(italic('E. coli') ~ ' Concentration',
+  ylab(expression(atop(italic('E. coli'),
                   '(CFU / 100ml, MPN)'))) +
 
   scale_y_log10() +
@@ -303,10 +303,9 @@ plt <- ggplot(coli_data, aes(YEAR, ColiVal)) +
   annotate('text', x = 2020, y = 17, 
            size = 3, hjust = .75, label = "14 mpn") +
   
- 
-  geom_hline(yintercept = 88, lty = 2) +
-  annotate('text', x = 2020, y = 110, 
-           size = 3, hjust = .75, label = "88 mpn") +
+# geom_hline(yintercept = 88, lty = 2) +
+#  annotate('text', x = 2020, y = 110, 
+#           size = 3, hjust = .75, label = "88 mpn") +
   scale_x_continuous(breaks = c(2015, 2017, 2019))
 #> Warning: Removed 5 rows containing missing values (geom_segment).
 ```
@@ -330,7 +329,7 @@ plt <- ggplot(coli_data, aes(YEAR, ColiVal, group = YEAR)) +
   stat_summary(fun = mean, 
                fill = 'red', shape = 22) +
   xlab('') +
-  ylab(expression(atop(italic('E. coli') ~ ' Concentration',
+  ylab(expression(atop(italic('E. coli'),
                   '(CFU / 100ml, MPN)'))) +
 
   scale_y_log10() +
@@ -369,7 +368,7 @@ plt <- ggplot(coli_data, aes(YEAR, ColiVal, group = YEAR)) +
   stat_summary(fun = mean, 
                fill = 'red', shape = 22) +
   xlab('') +
-  ylab(expression(atop(italic('E. coli') ~ ' Concentration',
+  ylab(expression(atop(italic('E. coli'),
                   '(CFU / 100ml, MPN)'))) +
 
   scale_y_log10() +
@@ -396,7 +395,7 @@ plt <- ggplot(sum_data, aes(gmean1, Station)) +
                   size = .2) +
   scale_x_log10(breaks = c(1,3,10,30, 100)) +
   
-  xlab(expression(atop('Geometric Mean ' ~ italic('E. coli') ~ ' Concentration',
+  xlab(expression(atop('Geometric Mean ' ~ italic('E. coli'),
                   '(CFU / 100ml, MPN)'))) +
 
   ylab('Location') +
@@ -437,11 +436,7 @@ boot_one <- function (dat, fun = "mean", sz = 1000, width = 0.95) {
 ``` r
 boot_one(rpois(30, 2))
 #>     2.5%    97.5% 
-<<<<<<< HEAD
-#> 1.499167 2.434167
-=======
-#> 1.733333 2.666667
->>>>>>> 92464bd7346e20e0631cca22c24b16eb314d9bfc
+#> 1.566667 2.466667
 ```
 
 We need to first calculate confidence intervals on a log scale, then
@@ -512,10 +507,14 @@ plt <- ggplot(sum_data, aes(gmean1, Station)) +
                   size = .2) +
   scale_x_log10(breaks = c(1,3,10,30, 100)) +
   
- xlab(expression(atop('Geometric Mean ' ~ italic('E. coli') ~ ' Concentration',
+  xlab(expression(atop('Geometric Mean ' ~ italic('E. coli'),
                   '(CFU / 100ml, MPN)'))) +
 
   ylab('Location') +
+  
+  geom_vline(xintercept = 14, lty = 2) +
+  annotate('text', y = 30, x = 16, label = "14 mpn",
+           size = 3, hjust = 0, angle = 270) +
   
   theme_cbep(base_size = 12) + 
   theme(axis.text.y = element_blank(),
@@ -532,7 +531,7 @@ plt
 
 ``` r
 ggsave('figures/stations_bootstrap.pdf', device = cairo_pdf, 
-       width = 5, height = 4)
+       width = 3, height = 5)
 ```
 
 # Model-Based Graphics
@@ -597,7 +596,7 @@ plt <- ggplot(emms, aes(geom_mean, Station)) +
                   size = .2) +
   scale_x_log10(breaks = c(1,3,10,30, 100)) +
   
-  xlab(expression(atop('Geometric Mean ' ~ italic('E. coli') ~ ' Concentration',
+  xlab(expression(atop('Geometric Mean ' ~ italic('E. coli'),
                   '(CFU / 100ml, MPN)'))) +
 
   ylab('Location') +
@@ -618,7 +617,7 @@ plt
 
 ``` r
 ggsave('figures/stations_gamma.pdf', device = cairo_pdf, 
-       width = 5, height = 4)
+       width = 3, height = 5)
 ```
 
 Qualitatively, the main difference is that the confidence intervals for
@@ -663,7 +662,7 @@ plt <- ggplot(emms3, aes(GROW_AREA, geom_mean)) +
   scale_color_manual(values = cbep_colors(), name = '', 
                      labels = c('Observed', 'Below Detection')) +
   
-  ylab(expression(atop(italic('E. coli') ~ ' Concentration',
+  ylab(expression(atop(italic('E. coli'),
                   '(CFU / 100ml, MPN)'))) +
   xlab('DMR Growing Area') +
   
@@ -705,7 +704,7 @@ plt <- ggplot(emms3, aes(GROW_AREA, geom_mean)) +
   scale_color_manual(values = cbep_colors(), name = '', 
                      labels = c('Observed', 'Below Detection')) +
   
-  ylab(expression(atop(italic('E. coli') ~ ' Concentration',
+  ylab(expression(atop(italic('E. coli'),
                   '(CFU / 100ml, MPN)'))) +
   xlab('DMR Growing Area') +
   
@@ -767,7 +766,7 @@ plt <- ggplot(emms4, aes(Month, geom_mean)) +
   scale_y_log10() +
   scale_color_manual(values = cbep_colors(), name = '', 
                      labels = c('Observed', 'Below Detection')) +
-  ylab(expression(atop(italic('E. coli') ~ ' Concentration',
+  ylab(expression(atop(italic('E. coli'),
                   '(CFU / 100ml, MPN)'))) +
 
   xlab('DMR Growing Area') +
@@ -812,7 +811,7 @@ plt <- ggplot(emms4, aes(Month, geom_mean)) +
   scale_color_manual(values = cbep_colors(), name = '', 
                      labels = c('Observed', 'Below Detection')) +
   
-  ylab(expression(atop(italic('E. coli') ~ ' Concentration',
+  ylab(expression(atop(italic('E. coli'),
                   '(CFU / 100ml, MPN)'))) +
   xlab('DMR Growing Area') +
   
@@ -882,7 +881,7 @@ plt <- ggplot(emms5, aes(DOY, geom_mean)) +
                                 181, 212, 243, 273, 304, 334),
                      labels = month.abb) +
   
-  ylab(expression(atop(italic('E. coli') ~ ' Concentration',
+  ylab(expression(atop(italic('E. coli'),
                   '(CFU / 100ml, MPN)'))) +
   xlab('Day of the Year') +
   
