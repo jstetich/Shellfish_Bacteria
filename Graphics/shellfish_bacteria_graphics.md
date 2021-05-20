@@ -400,8 +400,7 @@ plt <- ggplot(sum_data, aes(gmean1, Station)) +
                   size = .2) +
   scale_x_log10(breaks = c(1,3,10,30, 100)) +
   
-  xlab(expression(atop('Geometric Mean ' ~ italic('E. coli'),
-                  '(CFU / 100ml)'))) +
+  xlab('Fecal Coliforms\n(CFU / 100ml)') +
 
   ylab('Location') +
   
@@ -441,7 +440,7 @@ boot_one <- function (dat, fun = "mean", sz = 1000, width = 0.95) {
 ``` r
 boot_one(rpois(30, 2))
 #>     2.5%    97.5% 
-#> 1.333333 2.733333
+#> 1.433333 2.433333
 ```
 
 We need to first calculate confidence intervals on a log scale, then
@@ -512,8 +511,7 @@ plt <- ggplot(sum_data, aes(gmean1, Station)) +
                   size = .2) +
   scale_x_log10(breaks = c(1,3,10,30, 100)) +
   
-  xlab(expression(atop('Geometric Mean ' ~ italic('E. coli'),
-                  '(CFU / 100ml)'))) +
+  xlab('Fecal Coliforms\n(CFU / 100ml)') +
 
   ylab('Location') +
   
@@ -601,8 +599,7 @@ plt <- ggplot(emms, aes(geom_mean, Station)) +
                   size = .2) +
   scale_x_log10(breaks = c(1,3,10,30, 100)) +
   
-  xlab(expression(atop('Geometric Mean ' ~ italic('E. coli'),
-                  '(CFU / 100ml)'))) +
+  xlab('Fecal Coliforms\n(CFU / 100ml)') +
 
   ylab('Location') +
   

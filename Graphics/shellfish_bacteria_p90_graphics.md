@@ -1,4 +1,4 @@
-Graphics Summarizing Shellfish Bacteria Data
+Revised Graphics Summarizing Shellfish Bacteria Data
 ================
 Curtis C. Bohlen, Casco Bay Estuary Partnership.
 02/17/2021
@@ -495,15 +495,14 @@ ggplot(long_dat, aes(value, Station)) +
   geom_linerange(aes(xmin = lower, xmax = upper, color = parameter),
                  alpha = 0.5,
                  size = .1) +
-  geom_point(aes(color = parameter), size = 0.5) + 
+  geom_point(aes(color = parameter), size = 0.75) + 
                
   scale_x_log10() +
   
   scale_color_manual(name = '', values = cbep_colors()[c(4,6)]) +
   scale_fill_manual(name = '', values = cbep_colors()[c(4,6)]) +
 
-  xlab(expression(atop('Fecal Coliforms'),
-                  '(CFU / 100ml)')) +
+  xlab('Fecal Coliforms\n(CFU / 100ml)')+
 
   ylab('Location') +
   expand_limits(y = 240) +  # this ensures the top dot is not cut off
@@ -540,14 +539,13 @@ ggsave('figures/stations_both_one.pdf', device = cairo_pdf,
 ``` r
 ggplot(long_dat, aes(value, Station)) + 
   
-  geom_point(aes(color = parameter), size = 0.5) + 
+  geom_point(aes(color = parameter), size = 0.75) + 
   scale_x_log10() +
   
   scale_color_manual(name = '', values = cbep_colors()[c(4,6)]) +
   scale_fill_manual(name = '', values = cbep_colors()[c(4,6)]) +
 
-  xlab(expression(atop('Fecal Coliforms'),
-                  '(CFU / 100ml)')) +
+  xlab('Fecal Coliforms\n(CFU / 100ml)') +
 
   ylab('Location') +
   
@@ -588,7 +586,7 @@ ggplot(long_dat, aes(value, Station)) +
   geom_linerange(aes(xmin = lower, xmax = upper),
                  color = 'gray75',
                  size = .1) +
-  geom_point(aes(color = parameter), size = 0.5) + 
+  geom_point(aes(color = parameter), size = 0.75) + 
                
   scale_x_log10() +
   
@@ -596,8 +594,7 @@ ggplot(long_dat, aes(value, Station)) +
   scale_color_manual(values = cbep_colors()[c(4,6)]) +
   scale_fill_manual(values = cbep_colors()[c(4,6)]) +
 
-  xlab(expression(atop('Fecal Coliforms'),
-                  '(CFU / 100ml)')) +
+  xlab('Fecal Coliforms\n(CFU / 100ml)') +
 
   ylab('Location') +
   
@@ -631,7 +628,7 @@ ggsave('figures/stations_both_two.pdf', device = cairo_pdf,
 ``` r
 ggplot(long_dat, aes(value, Station)) + 
   
-  geom_point(aes(color = parameter), size = 0.5) + 
+  geom_point(aes(color = parameter), size = 0.75) + 
                
   scale_x_log10() +
   
@@ -639,8 +636,7 @@ ggplot(long_dat, aes(value, Station)) +
   scale_color_manual(values = cbep_colors()[c(4,6)]) +
   scale_fill_manual(values = cbep_colors()[c(4,6)]) +
 
-  xlab(expression(atop('Fecal Coliforms'),
-                  '(CFU / 100ml)')) +
+  xlab('Fecal Coliforms\n(CFU / 100ml)') +
 
   ylab('Location') +
   
