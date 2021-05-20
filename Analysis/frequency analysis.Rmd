@@ -19,15 +19,15 @@ knitr::opts_chunk$set(fig.align = 'center',
 ```
 
 # Introduction
-The bacteria data is highly skewed. We have found no ready way to estimate a
+The bacteria data is highly skewed. We have found no ready way to model a
 geometric mean for these data in a robust way.  The data appears distributed
 close to a Pareto distribution, which is highly skewed, with a heavy right tail.
 This distribution is likely to be difficult to model, so we can not readily
 estimate parameters, moments and other summary statistics.
 
 One possibility would be to run some sort of (generalized) linear model on the
-log of data, calculate means and medians, and back transform. I hope to explore
-both linear model approaches in another R Notebook.
+log of data, calculate means and medians, and back transform. We explore
+ linear model approaches in another R Notebook.
 
 Here we take another approach, which is to focus on binomial, quasi-binomial,
 and multinomial proportional odds models to estimate probabilities of exceeding
@@ -71,7 +71,7 @@ only indirectly to these data:
 A "90 day interval" might apply to a summer's worth of data, but in most years 
 that will only represent a handful of observations at each site, so it is of 
 limited value. More seriously, the standard is written in terms of 
-"enterococcus" bacteria, not the "*e. coli*" data used by DMR.
+"enterococcus" bacteria, not the fecal coliform data used by DMR.
 
 # Load Libraries
 ```{r libraries}
@@ -468,7 +468,7 @@ plt <- ggplot(p_res, aes(grow_area, prob)) +
   geom_hline(yintercept = 0.9, color = 'gray85', lty =2, size = 1) +
   
   ylab(expression(atop('Frequency of Meeting', 
-                           'P90 ' ~ italic('E. coli') ~ ' Standard'))) +
+                           'P90 ' ~ 'Fecal Coliforms' ~ ' Standard'))) +
   xlab('Maine DMR Growing Area') +
 
   theme_cbep(base_size = 12)
@@ -511,7 +511,7 @@ plt <- ggplot(mms, aes(month, prob)) +
   
   xlab('') + 
   ylab(expression(atop('Probability of Meeting', 
-                           'P90 ' ~ italic('E. coli') ~ ' Standard'))) +
+                           'P90 ' ~ 'Fecal Coliforms' ~ ' Standard'))) +
   
   ylim(0.75, 1.0) +
 

@@ -105,7 +105,7 @@ interval.
 A “90 day interval” might apply to a summer’s worth of data, but in most
 years that will only represent a handful of observations at each site.
 Also note that this standard is written in terms of “enterococci”, not
-“*E. coli* or”colifomes".
+“*E. coli* or”coliforms".
 
 # Load Libraries
 
@@ -116,11 +116,15 @@ library(fitdistrplus)  # For cullen-fray graph etc.
 #> Loading required package: survival
 
 library(tidyverse)  # Loads another `select()`
-#> -- Attaching packages --------------------------------------- tidyverse 1.3.0 --
-#> v ggplot2 3.3.3     v dplyr   1.0.3
-#> v tibble  3.0.5     v stringr 1.4.0
-#> v tidyr   1.1.2     v forcats 0.5.0
+#> Warning: package 'tidyverse' was built under R version 4.0.5
+#> -- Attaching packages --------------------------------------- tidyverse 1.3.1 --
+#> v ggplot2 3.3.3     v dplyr   1.0.6
+#> v tibble  3.1.2     v stringr 1.4.0
+#> v tidyr   1.1.3     v forcats 0.5.1
 #> v purrr   0.3.4
+#> Warning: package 'tidyr' was built under R version 4.0.5
+#> Warning: package 'dplyr' was built under R version 4.0.5
+#> Warning: package 'forcats' was built under R version 4.0.5
 #> -- Conflicts ------------------------------------------ tidyverse_conflicts() --
 #> x dplyr::filter() masks stats::filter()
 #> x dplyr::lag()    masks stats::lag()
@@ -137,13 +141,14 @@ library(VGAM)      # For Pareto GLMs and estimation.
 #> 
 #>     fill
 library(mgcv)      # For GAMs, here used principally for hierarchical models
+#> Warning: package 'mgcv' was built under R version 4.0.5
 #> Loading required package: nlme
 #> 
 #> Attaching package: 'nlme'
 #> The following object is masked from 'package:dplyr':
 #> 
 #>     collapse
-#> This is mgcv 1.8-33. For overview type 'help("mgcv-package")'.
+#> This is mgcv 1.8-35. For overview type 'help("mgcv-package")'.
 #> 
 #> Attaching package: 'mgcv'
 #> The following object is masked from 'package:VGAM':
@@ -198,7 +203,7 @@ basis than the usual conventions.
 
 Second, we calculate a version of the data where non-detects are
 replaced by half the value of the detection limit. However, we plan to
-use the LOG of *E. coli* counts in Gamma GLM models, which require
+use the LOG of fecal coliform counts in Gamma GLM models, which require
 response variables to be strictly positive. The most common Reporting
 Limit in these data is `RL == 2`. Half of that is 1.0, and
 `log(1.0) == 0`. Consequently, we replace all values 1.0 with 1.1, as
@@ -232,7 +237,7 @@ coli_data %>%
   pull(ColiVal_ml) %>%
   summary
 #>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-#>  0.5393  0.5997  0.6112  0.6114  0.6226  0.6860
+#>  0.5398  0.6003  0.6117  0.6117  0.6233  0.6752
 ```
 
 So, our (lognormal) based estimator for censored values estimates a
@@ -269,7 +274,7 @@ weather_data <- read_csv(fpath,
         TMIN = col_number(), TMINattr = col_character(), 
         TMAX = col_number(), TMAXattr = col_character(), 
         station = col_skip())) %>%
-  select( ! starts_with('W')) %>%
+  select(! starts_with('W')) %>%
   select(! ends_with('attr')) %>%
   rename(sdate = date,
          Precip=PRCP,
@@ -380,8 +385,8 @@ paretofit = vglm(ColiVal_ml~ 1, paretoII(location = 0) , data = coli_data)
 parms <- exp(coef(paretofit))
 names(parms) <- c('Scale', 'Shape')
 parms
-#>    Scale    Shape 
-#> 1.390057 0.927623
+#>     Scale     Shape 
+#> 1.3910944 0.9278738
 #predict(paretofit, newdata = data.frame(x = 1))
 ```
 
@@ -466,18 +471,17 @@ cat('\nNon-detects at maximum likelihood estimator\n')
 #> Non-detects at maximum likelihood estimator
 summary(coli_data$ColiVal_ml)
 #>      Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
-#>    0.5393    0.6093    0.6350   16.3186    4.0000 1600.0000
+#>    0.5398    0.6099    0.6355   16.3188    4.0000 1600.0000
 cat('\n     Geometric Mean\n')
 #> 
 #>      Geometric Mean
 exp(mean(log(coli_data$ColiVal_ml)))
-#> [1] 1.887169
+#> [1] 1.887795
 ```
 
 Note that the medians are right at the detection limits (or our
 re-casting of those to handle non-detects). Also, the 75th percentile is
-at 4.0, just double the detection limit, and probably the next available
-value under the MPN method.
+at 4.0, just double the detection limit.
 
 ## Summary Statistics Dataframe
 
@@ -521,7 +525,7 @@ plt <- ggplot(sum_data, aes(gmean2, Station)) +
                   size = .2) +
   scale_x_log10(breaks = c(1,3,10,30, 100)) +
   
-  xlab('Geometric Mean E. coli \n(MPN CFU/100 ml)') +
+  xlab('Geometric Mean Fecal Coliforms \n(CFU / 100ml)') +
   ylab('Location') +
   
   theme_cbep(base_size = 12) + 
@@ -579,8 +583,8 @@ anova(test_lm)
 #> 
 #> Response: log(ColiVal_ml)
 #>             Df  Sum Sq Mean Sq F value    Pr(>F)    
-#> Station    237  2684.9 11.3287  5.2101 < 2.2e-16 ***
-#> Residuals 9161 19919.6  2.1744                      
+#> Station    237  2683.8 11.3239  5.2095 < 2.2e-16 ***
+#> Residuals 9161 19913.3  2.1737                      
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ```
@@ -611,7 +615,7 @@ plt <- ggplot(emms, aes(geom_mean, Station)) +
  
   scale_x_log10(breaks = c(1,3,10,30, 100)) +
   
-  xlab('Geometric Mean E. coli \n(MPN CFU/100 ml)') +
+  xlab('Geometric Mean Fecal Coliforms \n(CFU / 100ml)') +
   ylab('Location') +
   
   theme_cbep(base_size = 12) + 
@@ -674,11 +678,11 @@ anova(rain_lm_1, rain_lm_2, rain_lm_3, rain_lm_4, rain_lm_5)
 #> Model 4: log(ColiVal_ml) ~ Station + Log1Precip + Log1Precip_d1
 #> Model 5: log(ColiVal_ml) ~ Station + Log1Precip + Log1Precip_d1 + Log1Precip_d2
 #>   Res.Df   RSS Df Sum of Sq        F Pr(>F)    
-#> 1   9158 19264                                 
-#> 2   9158 18884  0    379.95                    
-#> 3   9158 19885  0  -1000.81                    
-#> 4   9157 18339  1   1545.76 771.9406 <2e-16 ***
-#> 5   9156 18334  1      5.12   2.5583 0.1098    
+#> 1   9158 19260                                 
+#> 2   9158 18877  0    382.56                    
+#> 3   9158 19879  0  -1001.42                    
+#> 4   9157 18334  1   1544.83 771.7224 <2e-16 ***
+#> 5   9156 18328  1      5.24   2.6175 0.1057    
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 rm(rain_lm_1, rain_lm_2, rain_lm_3, rain_lm_4, rain_lm_5)
@@ -696,9 +700,9 @@ rain_lm <- lm(log(ColiVal_ml) ~ Station + Log1Precip +
 
 ``` r
 summary(rain_lm)$coefficients[239:240,]
-#>                Estimate Std. Error t value      Pr(>|t|)
-#> Log1Precip    0.2339226 0.01418108 16.4954  2.915961e-60
-#> Log1Precip_d1 0.3143605 0.01462836 21.4898 5.561366e-100
+#>                Estimate Std. Error  t value      Pr(>|t|)
+#> Log1Precip    0.2335911 0.01417886 16.47461  4.073075e-60
+#> Log1Precip_d1 0.3145405 0.01462607 21.50546 4.033035e-100
 ```
 
 So conditions are more dependent on the prior day’s rainfall.
@@ -729,7 +733,7 @@ plt <- ggplot(emms, aes(geom_mean, Station)) +
                   size = .2) +
   scale_x_log10(breaks = c(1,3,10,30, 100)) +
   
-  xlab('Geometric Mean E. coli \n(MPN CFU/100 ml)') +
+  xlab('Geometric Mean Fecal Coliforms \n(CFU / 100ml)') +
   ylab('Location') +
   
   theme_cbep(base_size = 12) + 
@@ -856,7 +860,7 @@ plt <- ggplot(emms, aes(geom_mean, Station)) +
                   size = .2) +
   scale_x_log10(breaks = c(1,3,10,30, 100)) +
   
-  xlab('Geometric Mean E. coli \n(MPN CFU/100 ml)') +
+  xlab('Geometric Mean Fecal Coliforms \n(CFU / 100ml)') +
   ylab('Location') +
   
   theme_cbep(base_size = 12) + 
@@ -975,7 +979,7 @@ plt <- ggplot(emms2, aes(geom_mean, Station)) +
   
   scale_x_log10(breaks = c(1,3,10,30, 100)) +
   
-  xlab('Geometric Mean E. coli \n(MPN CFU/100 ml)') +
+  xlab('Geometric Mean Fecal Coliforms \n(CFU / 100ml)') +
   ylab('Location') +
   
   scale_color_manual(values = cbep_colors()) +
@@ -1044,7 +1048,7 @@ anova(grow_gam)
 ```
 
 We see that grow area is a statistically significant predictor of
-geometric mean levels of *E. coli* at the different stations.
+geometric mean levels of fecal coliforms at the different stations.
 
 ### Plot
 
@@ -1148,7 +1152,7 @@ plt <- ggplot(emms3, aes(GROW_AREA, geom_mean)) +
   scale_y_log10() +
   scale_color_manual(values = cbep_colors(), name = '', 
                      labels = c('Observed', 'Below Detection')) +
-  ylab('Geometric Mean E. coli \n(MPN CFU/100 ml)') +
+  ylab('Geometric Mean Fecal Coliforms \n(CFU / 100ml)') +
   xlab('DMR Growing Area') +
   
   theme_cbep(base_size = 12) +
@@ -1179,8 +1183,9 @@ transformed data) has trouble with fitting the values of the non-detects
 when we replace non-detects with a value of 1.
 
 Those warnings suggest problems with convergence. That is not all that
-surprising, since both rainfall and *E. coli* levels are highly skewed –
-and the correlations between them, while important, are not perfect.
+surprising, since both rainfall and fecal coliform levels are highly
+skewed – and the correlations between them, while important, are not
+perfect.
 
 ``` r
 plot(month_gam)
@@ -1290,7 +1295,7 @@ plt <- ggplot(emms4, aes(Month, geom_mean)) +
   scale_y_log10() +
   scale_color_manual(values = cbep_colors(), name = '', 
                      labels = c('Observed', 'Below Detection')) +
-  ylab('Geometric Mean E. coli \n(MPN CFU/100 ml)') +
+  ylab('Fecal Coliforms \n(CFU / 100ml)') +
   xlab('DMR Growing Area') +
   
   theme_cbep(base_size = 12) +
@@ -1424,7 +1429,7 @@ plt <- ggplot(emms5, aes(DOY, geom_mean)) +
   scale_y_log10() +
   scale_color_manual(values = cbep_colors(), name = '', 
                      labels = c('Observed', 'Below Detection')) +
-  ylab('Geometric Mean E. coli \n(MPN CFU/100 ml)') +
+  ylab('Fecal Coliforms \n(CFU / 100ml)') +
   xlab('Day of the Year') +
   
   theme_cbep(base_size = 12) +
@@ -1462,7 +1467,7 @@ kruskal.test(ColiVal_ml ~ Station, data = coli_data)
 #>  Kruskal-Wallis rank sum test
 #> 
 #> data:  ColiVal_ml by Station
-#> Kruskal-Wallis chi-squared = 875.44, df = 237, p-value < 2.2e-16
+#> Kruskal-Wallis chi-squared = 887.11, df = 237, p-value < 2.2e-16
 ```
 
 Although the Kruskal-Wallis test is not strictly a comparison of

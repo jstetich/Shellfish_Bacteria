@@ -12,16 +12,21 @@ Curtis C. Bohlen, Casco Bay Estuary Partnership.
 ``` r
 library(readr)
 library(tidyverse)
-#> -- Attaching packages --------------------------------------- tidyverse 1.3.0 --
-#> v ggplot2 3.3.3     v dplyr   1.0.3
-#> v tibble  3.0.5     v stringr 1.4.0
-#> v tidyr   1.1.2     v forcats 0.5.0
+#> Warning: package 'tidyverse' was built under R version 4.0.5
+#> -- Attaching packages --------------------------------------- tidyverse 1.3.1 --
+#> v ggplot2 3.3.3     v dplyr   1.0.6
+#> v tibble  3.1.2     v stringr 1.4.0
+#> v tidyr   1.1.3     v forcats 0.5.1
 #> v purrr   0.3.4
+#> Warning: package 'tidyr' was built under R version 4.0.5
+#> Warning: package 'dplyr' was built under R version 4.0.5
+#> Warning: package 'forcats' was built under R version 4.0.5
 #> -- Conflicts ------------------------------------------ tidyverse_conflicts() --
 #> x dplyr::filter() masks stats::filter()
 #> x dplyr::lag()    masks stats::lag()
 library(corrr)  # Used for correlate(), which produces a data frame
 library(GGally)
+#> Warning: package 'GGally' was built under R version 4.0.5
 #> Registered S3 method overwritten by 'GGally':
 #>   method from   
 #>   +.gg   ggplot2
@@ -99,7 +104,7 @@ with(coli_data, sum(is.na(ColiVal)))
 #> [1] 684
 ```
 
-what does it mean to have missing values in this context? That is not
+What does it mean to have missing values in this context? That is not
 entirely clear, but these appear to be samples that are recorded with
 all site information, but no sample-related information, so my guess is,
 these represent samples that were scheduled but not actually collected.
@@ -131,7 +136,7 @@ ggplot(test, aes(row, ColiVal)) +
 #> Warning: Removed 1 rows containing missing values (geom_point).
 ```
 
-<img src="Exploratory_Analysis_files/figure-gfm/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
+<img src="exploratory_analysis_files/figure-gfm/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
 
 ### Low Values
 
@@ -151,11 +156,8 @@ test$ColiVal[which(test$ColiVal != as.integer(test$ColiVal))]
 ```
 
 These are discrete, low, non-integer values. Presumably these reflect
-the possible numerical values derived from the “MPN” methods used to
-estimate number of colony forming units in each water sample. These
-represent the expected value of the number of colony forming units based
-on the number of wells on a sample plate that show color after
-incubation.
+the possible numerical values derived from the methods used to estimate
+number of colony forming units in each water sample.
 
 ## Exploratory Graphics
 
@@ -166,7 +168,7 @@ ggplot(coli_data, aes(SDateTime, ColiVal)) +
 #> Warning: Removed 684 rows containing missing values (geom_point).
 ```
 
-<img src="Exploratory_Analysis_files/figure-gfm/unnamed-chunk-9-1.png" style="display: block; margin: auto;" />
+<img src="exploratory_analysis_files/figure-gfm/unnamed-chunk-9-1.png" style="display: block; margin: auto;" />
 This shows us: 1. The discrete of values observed 2. The importance of
 censoring 3. Possible coding errors where censored values were perhaps
 not consistently coded in the original data. 4. Data is highly skewed,
@@ -196,14 +198,14 @@ coli_data %>%
   ggplot(aes(YEAR, gmColi, color=GROW_AREA)) + geom_line(lwd=2)
 ```
 
-<img src="Exploratory_Analysis_files/figure-gfm/unnamed-chunk-10-1.png" style="display: block; margin: auto;" />
+<img src="exploratory_analysis_files/figure-gfm/unnamed-chunk-10-1.png" style="display: block; margin: auto;" />
 So, geometric means vary year to year and Growing Area to Growing Area.
-WE obvioulsly need indications of variability to raw any conclusions,
-but this pints in useful directions.
+WE obviously need indications of variability to raw any conclusions, but
+this points in useful directions.
 
 ## Histograms
 
-First, a histogram of the log of the E. coli numbers.
+First, a histogram of the log of the fecal coliform numbers.
 
 ``` r
 ggplot(coli_data, aes(log10(ColiVal))) +
@@ -211,7 +213,7 @@ ggplot(coli_data, aes(log10(ColiVal))) +
 #> Warning: Removed 684 rows containing non-finite values (stat_bin).
 ```
 
-<img src="Exploratory_Analysis_files/figure-gfm/unnamed-chunk-11-1.png" style="display: block; margin: auto;" />
+<img src="exploratory_analysis_files/figure-gfm/unnamed-chunk-11-1.png" style="display: block; margin: auto;" />
 And then a log-log histogram. A Pareto random variable produces a linear
 relation on in a log-log histogram.
 
@@ -224,7 +226,7 @@ ggplot(coli_data, aes(ColiVal)) +
 #> Warning: Removed 115 rows containing missing values (geom_bar).
 ```
 
-<img src="Exploratory_Analysis_files/figure-gfm/unnamed-chunk-12-1.png" style="display: block; margin: auto;" />
+<img src="exploratory_analysis_files/figure-gfm/unnamed-chunk-12-1.png" style="display: block; margin: auto;" />
 As suggested before, this is a strongly skewed, heavy-tailed
 distribution. So, Gamma, Exponential, and perhaps Pareto distributions
 might work, but that nearly linear decline int eh histogram suggests a
@@ -250,8 +252,8 @@ coli_data %>%
 
 So, no strong linear rank correlations. Correlations are slightly lower
 using Pearson correlations. Weak correlations with Temperature and
-Salinity and salinity and *E. coli* are likely meaningful. Also, there
-may be non-linear relationships at play. The salinity to year
+Salinity and salinity and fecal coliform are likely meaningful. Also,
+there may be non-linear relationships at play. The salinity to year
 correlation is unexpected….
 
 ``` r
@@ -289,12 +291,13 @@ coli_data %>%
 #> Warning: Removed 684 rows containing missing values (geom_point).
 ```
 
-<img src="Exploratory_Analysis_files/figure-gfm/unnamed-chunk-14-1.png" style="display: block; margin: auto;" />
+<img src="exploratory_analysis_files/figure-gfm/unnamed-chunk-14-1.png" style="display: block; margin: auto;" />
 
-So, data are very highly scattered, obscuring patterns even when the *E.
-coli* counts are log transformed. It appears *E. coli* Levels are weakly
-related to salinity and temperature, which are not especially correlated
-themselves. The highly skewed *E. coli* data is problematic.
+So, data are very highly scattered, obscuring patterns even when the
+fecal coliform counts are log transformed. It appears fecal coliform
+Levels are weakly related to salinity and temperature, which are not
+especially correlated themselves. The highly skewed fecal coliform data
+is problematic.
 
 ``` r
 coli_data %>%
@@ -318,13 +321,13 @@ coli_data %>%
 #> Warning: Removed 684 rows containing non-finite values (stat_density).
 ```
 
-<img src="Exploratory_Analysis_files/figure-gfm/unnamed-chunk-15-1.png" style="display: block; margin: auto;" />
+<img src="exploratory_analysis_files/figure-gfm/unnamed-chunk-15-1.png" style="display: block; margin: auto;" />
 
 No strong patterns with time of year, month, or year, except weak
 relationships to time of year. Obvious artifacts due to the discrete
-nature of values of the *E. coli* data at low values. Fewer late-year
-observations from 2019, so we probably need to either model time of year
-or remove 2019 from the data entirely.
+nature of values of the fecal coliform data at low values. Fewer
+late-year observations from 2019, so we probably need to either model
+time of year or remove 2019 from the data entirely.
 
 # Statistical Considerations
 
@@ -408,7 +411,7 @@ interval.
 A “90 day interval” might apply to a summer’s worth of data, but in most
 years that will only represent a handful of observations at each site.
 Also note that this standard is written in terms of “enterococci”, not
-“*E. coli* or”coliformes".
+“fecal coliform or”coliformes".
 
 ## Evaluation
 

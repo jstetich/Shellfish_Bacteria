@@ -68,7 +68,8 @@ coli_data <- coli_data %>%
 with(coli_data, length(ColiVal))
 with(coli_data, sum(is.na(ColiVal)))
 ```
-what does it mean to have missing values in this context?  That is not entirely
+
+What does it mean to have missing values in this context?  That is not entirely
 clear, but these appear to be samples that are recorded with all site
 information, but no sample-related information, so my guess is, these represent
 samples that were scheduled but not actually collected.
@@ -107,10 +108,8 @@ Non-integer values include the following:
 test$ColiVal[which(test$ColiVal != as.integer(test$ColiVal))]
 ```
 These are discrete, low, non-integer values.  Presumably these reflect the
-possible numerical values derived from the "MPN" methods used to estimate number
-of colony forming units in each water sample. These represent the expected value
-of the number of colony forming units based on the number of wells on a sample
-plate that show color after incubation.
+possible numerical values derived from the methods used to estimate number
+of colony forming units in each water sample.
 
 ## Exploratory Graphics
 ```{r}
@@ -136,9 +135,6 @@ That may reflect the way we determined whether a sample was censored -- by
 looking for a less than sign ("<") in the original data.  We could have
 alternatively looked at whether the raw col and coliscore values were identical.
 
-
-
-
 So lets go to the the trouble of reshaping our data the way we really want.
 ```{r}
 coli_data %>%
@@ -149,12 +145,11 @@ coli_data %>%
   ggplot(aes(YEAR, gmColi, color=GROW_AREA)) + geom_line(lwd=2)
 ```
 So, geometric means vary year to year and Growing Area to Growing Area.  WE
-obvioulsly need indications of variability  to raw any conclusions, but this
-pints in useful directions.
-
+obviously need indications of variability  to raw any conclusions, but this
+points in useful directions.
 
 ## Histograms
-First, a histogram of the log of the E. coli numbers. 
+First, a histogram of the log of the fecal coliform numbers. 
 ```{r}
 ggplot(coli_data, aes(log10(ColiVal))) +
   geom_histogram(aes(color=RCFlag | LCFlag), bins = 100)
@@ -180,7 +175,7 @@ coli_data %>%
 
 So, no strong linear rank correlations.  Correlations are slightly lower using 
 Pearson correlations.  Weak correlations with Temperature and Salinity and
-salinity and *E. coli* are likely meaningful.  Also, there may be non-linear
+salinity and fecal coliform are likely meaningful.  Also, there may be non-linear
 relationships at play.  The salinity to year correlation is unexpected....
 
 ```{r}
@@ -191,10 +186,10 @@ coli_data %>%
           progress=FALSE)
 ```
 
-So, data are very highly scattered, obscuring patterns even when the *E. coli*
-counts are log transformed. It appears *E. coli* Levels are weakly related to
+So, data are very highly scattered, obscuring patterns even when the fecal coliform
+counts are log transformed. It appears fecal coliform Levels are weakly related to
 salinity and temperature, which are not especially correlated themselves.  The
-highly skewed *E. coli* data is problematic.
+highly skewed fecal coliform data is problematic.
 
 ```{r}
 coli_data %>%
@@ -205,7 +200,7 @@ coli_data %>%
 
 No strong  patterns with time of year, month, or year, except weak relationships
 to time of year. Obvious artifacts due to the discrete nature of values of the
-*E. coli* data at low values. Fewer late-year observations from 2019, so we
+fecal coliform data at low values. Fewer late-year observations from 2019, so we
 probably need to either model time of year or remove 2019 from the data
 entirely.
 
@@ -284,7 +279,7 @@ only indirectly to these data:
 
 A "90 day interval" might apply to a summer's worth of data, but in most years 
 that will only represent a handful of observations at each site. Also note that
-this standard is written in terms of "enterococci", not "*E. coli* or 
+this standard is written in terms of "enterococci", not "fecal coliform or 
 "coliformes".
 
 

@@ -3,21 +3,21 @@ Shellfish Sanitation Program Data Assembly
 Curtis C. Bohlen, Casco Bay Estuary Partnership.
 11/14/2020
 
-  - [Introduction](#introduction)
-  - [Install Libraries](#install-libraries)
-  - [Load Data](#load-data)
-      - [Folder References](#folder-references)
-      - [Read Data](#read-data)
-      - [Convert Orders of Factors](#convert-orders-of-factors)
-      - [What levels are present?](#what-levels-are-present)
-      - [Reorder Some](#reorder-some)
-      - [Simplify Column Names](#simplify-column-names)
-      - [Remove Unreliable / Uninformative
-        Categories](#remove-unreliable-uninformative-categories)
-  - [Consistency of How Censored Data is
+-   [Introduction](#introduction)
+-   [Install Libraries](#install-libraries)
+-   [Load Data](#load-data)
+    -   [Folder References](#folder-references)
+    -   [Read Data](#read-data)
+    -   [Convert Orders of Factors](#convert-orders-of-factors)
+    -   [What levels are present?](#what-levels-are-present)
+    -   [Reorder Some](#reorder-some)
+    -   [Simplify Column Names](#simplify-column-names)
+    -   [Remove Unreliable / Uninformative
+        Categories](#remove-unreliable--uninformative-categories)
+-   [Consistency of How Censored Data is
     Reported](#consistency-of-how-censored-data-is-reported)
-      - [Left Censoring](#left-censoring)
-  - [Right Censoring](#right-censoring)
+    -   [Left Censoring](#left-censoring)
+-   [Right Censoring](#right-censoring)
 
 <img
     src="https://www.cascobayestuary.org/wp-content/uploads/2014/04/logo_sm.jpg"
@@ -37,14 +37,22 @@ library(readr)
 library(tidyverse)
 ```
 
-    ## -- Attaching packages ----------------------------------------------------------------------------------- tidyverse 1.3.0 --
+    ## Warning: package 'tidyverse' was built under R version 4.0.5
 
-    ## v ggplot2 3.3.2     v dplyr   1.0.2
-    ## v tibble  3.0.3     v stringr 1.4.0
-    ## v tidyr   1.1.2     v forcats 0.5.0
+    ## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --
+
+    ## v ggplot2 3.3.3     v dplyr   1.0.6
+    ## v tibble  3.1.2     v stringr 1.4.0
+    ## v tidyr   1.1.3     v forcats 0.5.1
     ## v purrr   0.3.4
 
-    ## -- Conflicts -------------------------------------------------------------------------------------- tidyverse_conflicts() --
+    ## Warning: package 'tidyr' was built under R version 4.0.5
+
+    ## Warning: package 'dplyr' was built under R version 4.0.5
+
+    ## Warning: package 'forcats' was built under R version 4.0.5
+
+    ## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
     ## x dplyr::filter() masks stats::filter()
     ## x dplyr::lag()    masks stats::lag()
 
@@ -356,7 +364,7 @@ So, here we see a couple of things:
     sophistication.
 
 2.  There’s a strange observation or group of observations that was
-    recorded as \< something that is well above the nominal detection
+    recorded as &lt; something that is well above the nominal detection
     limits.
 
 ## Left Censoring
@@ -372,7 +380,7 @@ So we have some inconsistency of how censored observations at the low
 end were handled. DMR USUALLY recorded their `COL_SCORE` as 1.9,
 presumably because that is “slightly below 2.0”, which is the true
 reporting limit for the method. But a few times, DMR also reports the
-‘RAW\_COL\_SCORE’ as “1.9”, instead of “\<2.”
+‘RAW\_COL\_SCORE’ as “1.9”, instead of “&lt;2.”
 
 ``` r
 the_data %>%
@@ -412,8 +420,6 @@ the_data %>%
   summarise(L = first(ColiVal)) %>%
   pull(L) 
 ```
-
-    ## `summarise()` ungrouping output (override with `.groups` argument)
 
     ## [1]  2 18
 
