@@ -66,24 +66,29 @@ use only a few results from modeling here.
 ``` r
 library(readr)
 library(tidyverse)      # Loads another `select()`
-#> -- Attaching packages --------------------------------------- tidyverse 1.3.0 --
-#> v ggplot2 3.3.3     v dplyr   1.0.3
-#> v tibble  3.0.5     v stringr 1.4.0
-#> v tidyr   1.1.2     v forcats 0.5.0
+#> Warning: package 'tidyverse' was built under R version 4.0.5
+#> -- Attaching packages --------------------------------------- tidyverse 1.3.1 --
+#> v ggplot2 3.3.3     v dplyr   1.0.6
+#> v tibble  3.1.2     v stringr 1.4.0
+#> v tidyr   1.1.3     v forcats 0.5.1
 #> v purrr   0.3.4
+#> Warning: package 'tidyr' was built under R version 4.0.5
+#> Warning: package 'dplyr' was built under R version 4.0.5
+#> Warning: package 'forcats' was built under R version 4.0.5
 #> -- Conflicts ------------------------------------------ tidyverse_conflicts() --
 #> x dplyr::filter() masks stats::filter()
 #> x dplyr::lag()    masks stats::lag()
 
 library(emmeans)        # For marginal means
 library(mgcv)           # For GAMs, here used principally for hierarchical models
+#> Warning: package 'mgcv' was built under R version 4.0.5
 #> Loading required package: nlme
 #> 
 #> Attaching package: 'nlme'
 #> The following object is masked from 'package:dplyr':
 #> 
 #>     collapse
-#> This is mgcv 1.8-33. For overview type 'help("mgcv-package")'.
+#> This is mgcv 1.8-35. For overview type 'help("mgcv-package")'.
 
 library(CBEPgraphics)
 load_cbep_fonts()
@@ -286,8 +291,8 @@ plt <- ggplot(coli_data, aes(YEAR, ColiVal)) +
   
   
   xlab('') +
-  ylab(expression(atop(italic('E. coli') ~ ' Concentration',
-                  '(CFU / 100ml, MPN)'))) +
+  ylab(expression(atop(italic('E. coli'),
+                  '(CFU / 100ml)'))) +
 
   scale_y_log10() +
 
@@ -301,12 +306,11 @@ plt <- ggplot(coli_data, aes(YEAR, ColiVal)) +
  plt +  
   geom_hline(yintercept = 14, lty = 2) +
   annotate('text', x = 2020, y = 17, 
-           size = 3, hjust = .75, label = "14 mpn") +
+           size = 3, hjust = .75, label = "14 CFU") +
   
- 
-  geom_hline(yintercept = 88, lty = 2) +
-  annotate('text', x = 2020, y = 110, 
-           size = 3, hjust = .75, label = "88 mpn") +
+# geom_hline(yintercept = 88, lty = 2) +
+#  annotate('text', x = 2020, y = 110, 
+#           size = 3, hjust = .75, label = "88 CFU") +
   scale_x_continuous(breaks = c(2015, 2017, 2019))
 #> Warning: Removed 5 rows containing missing values (geom_segment).
 ```
@@ -330,8 +334,8 @@ plt <- ggplot(coli_data, aes(YEAR, ColiVal, group = YEAR)) +
   stat_summary(fun = mean, 
                fill = 'red', shape = 22) +
   xlab('') +
-  ylab(expression(atop(italic('E. coli') ~ ' Concentration',
-                  '(CFU / 100ml, MPN)'))) +
+  ylab(expression(atop(italic('E. coli'),
+                  '(CFU / 100ml)'))) +
 
   scale_y_log10() +
 
@@ -342,12 +346,12 @@ plt <- ggplot(coli_data, aes(YEAR, ColiVal, group = YEAR)) +
  plt +  
   geom_hline(yintercept = 14, lty = 2) +
   annotate('text', x = 2020, y = 17, 
-           size = 3, hjust = .75, label = "14 mpn") +
+           size = 3, hjust = .75, label = "14 CFU") +
   
  
   geom_hline(yintercept = 88, lty = 2) +
   annotate('text', x = 2020, y = 110, 
-           size = 3, hjust = .75, label = "88 mpn") +
+           size = 3, hjust = .75, label = "88 CFU") +
   scale_x_continuous(breaks = c(2015, 2017, 2019))
 #> Warning: Removed 5 rows containing missing values (geom_segment).
 ```
@@ -369,8 +373,8 @@ plt <- ggplot(coli_data, aes(YEAR, ColiVal, group = YEAR)) +
   stat_summary(fun = mean, 
                fill = 'red', shape = 22) +
   xlab('') +
-  ylab(expression(atop(italic('E. coli') ~ ' Concentration',
-                  '(CFU / 100ml, MPN)'))) +
+  ylab(expression(atop(italic('E. coli'),
+                  '(CFU / 100ml)'))) +
 
   scale_y_log10() +
 
@@ -396,8 +400,7 @@ plt <- ggplot(sum_data, aes(gmean1, Station)) +
                   size = .2) +
   scale_x_log10(breaks = c(1,3,10,30, 100)) +
   
-  xlab(expression(atop('Geometric Mean ' ~ italic('E. coli') ~ ' Concentration',
-                  '(CFU / 100ml, MPN)'))) +
+  xlab('Fecal Coliforms\n(CFU / 100ml)') +
 
   ylab('Location') +
   
@@ -437,7 +440,7 @@ boot_one <- function (dat, fun = "mean", sz = 1000, width = 0.95) {
 ``` r
 boot_one(rpois(30, 2))
 #>     2.5%    97.5% 
-#> 1.499167 2.434167
+#> 1.433333 2.433333
 ```
 
 We need to first calculate confidence intervals on a log scale, then
@@ -508,10 +511,13 @@ plt <- ggplot(sum_data, aes(gmean1, Station)) +
                   size = .2) +
   scale_x_log10(breaks = c(1,3,10,30, 100)) +
   
- xlab(expression(atop('Geometric Mean ' ~ italic('E. coli') ~ ' Concentration',
-                  '(CFU / 100ml, MPN)'))) +
+  xlab('Fecal Coliforms\n(CFU / 100ml)') +
 
   ylab('Location') +
+  
+  geom_vline(xintercept = 14, lty = 2) +
+  annotate('text', y = 30, x = 16, label = "14 CFU",
+           size = 3, hjust = 0, angle = 270) +
   
   theme_cbep(base_size = 12) + 
   theme(axis.text.y = element_blank(),
@@ -528,7 +534,7 @@ plt
 
 ``` r
 ggsave('figures/stations_bootstrap.pdf', device = cairo_pdf, 
-       width = 5, height = 4)
+       width = 3, height = 5)
 ```
 
 # Model-Based Graphics
@@ -593,8 +599,7 @@ plt <- ggplot(emms, aes(geom_mean, Station)) +
                   size = .2) +
   scale_x_log10(breaks = c(1,3,10,30, 100)) +
   
-  xlab(expression(atop('Geometric Mean ' ~ italic('E. coli') ~ ' Concentration',
-                  '(CFU / 100ml, MPN)'))) +
+  xlab('Fecal Coliforms\n(CFU / 100ml)') +
 
   ylab('Location') +
   
@@ -614,7 +619,7 @@ plt
 
 ``` r
 ggsave('figures/stations_gamma.pdf', device = cairo_pdf, 
-       width = 5, height = 4)
+       width = 3, height = 5)
 ```
 
 Qualitatively, the main difference is that the confidence intervals for
@@ -659,8 +664,8 @@ plt <- ggplot(emms3, aes(GROW_AREA, geom_mean)) +
   scale_color_manual(values = cbep_colors(), name = '', 
                      labels = c('Observed', 'Below Detection')) +
   
-  ylab(expression(atop(italic('E. coli') ~ ' Concentration',
-                  '(CFU / 100ml, MPN)'))) +
+  ylab(expression(atop(italic('E. coli'),
+                  '(CFU / 100ml)'))) +
   xlab('DMR Growing Area') +
   
   theme_cbep(base_size = 12) +
@@ -673,12 +678,12 @@ plt <- ggplot(emms3, aes(GROW_AREA, geom_mean)) +
  plt +  
   geom_hline(yintercept = 14, lty = 2) +
   annotate('text', x = 4.5, y = 17, 
-           size = 3, hjust = 1, label = "14 mpn") +
+           size = 3, hjust = 1, label = "14 CFU") +
   
  
   geom_hline(yintercept = 88, lty = 2) +
   annotate('text', x = 4.5, y = 110, 
-           size = 3, hjust = 1, label = "88 mpn") +
+           size = 3, hjust = 1, label = "88 CFU") +
 
 ggsave('figures/regions_jitter.pdf', device = cairo_pdf, 
        width = 5, height = 4)
@@ -701,8 +706,8 @@ plt <- ggplot(emms3, aes(GROW_AREA, geom_mean)) +
   scale_color_manual(values = cbep_colors(), name = '', 
                      labels = c('Observed', 'Below Detection')) +
   
-  ylab(expression(atop(italic('E. coli') ~ ' Concentration',
-                  '(CFU / 100ml, MPN)'))) +
+  ylab(expression(atop(italic('E. coli'),
+                  '(CFU / 100ml)'))) +
   xlab('DMR Growing Area') +
   
   theme_cbep(base_size = 12) +
@@ -713,19 +718,20 @@ plt <- ggplot(emms3, aes(GROW_AREA, geom_mean)) +
  plt +  
   geom_hline(yintercept = 14, lty = 2) +
   annotate('text', x = 4.5, y = 17, 
-           size = 3, hjust = .75, label = "14 mpn") +
+           size = 3, hjust = .75, label = "14 CFU") +
   
  
   geom_hline(yintercept = 88, lty = 2) +
   annotate('text', x = 4.5, y = 110, 
-           size = 3, hjust = .75, label = "88 mpn") +
-
-
-ggsave('figures/regions_violin.pdf', device = cairo_pdf, 
-       width = 5, height = 4)
+           size = 3, hjust = .75, label = "88 CFU")
 ```
 
 <img src="shellfish_bacteria_graphics_files/figure-gfm/grow_violin_add_ref_lines-1.png" style="display: block; margin: auto;" />
+
+``` r
+#ggsave('figures/regions_violin.pdf', device = cairo_pdf, 
+#       width = 5, height = 4)
+```
 
 ## Seasonal GAM Model
 
@@ -763,10 +769,10 @@ plt <- ggplot(emms4, aes(Month, geom_mean)) +
   scale_y_log10() +
   scale_color_manual(values = cbep_colors(), name = '', 
                      labels = c('Observed', 'Below Detection')) +
-  ylab(expression(atop(italic('E. coli') ~ ' Concentration',
-                  '(CFU / 100ml, MPN)'))) +
+  ylab(expression(atop(italic('E. coli'),
+                  '(CFU / 100ml)'))) +
 
-  xlab('DMR Growing Area') +
+  xlab('') +
   
   theme_cbep(base_size = 12) +
   theme(legend.position = 'bottom') +
@@ -780,18 +786,20 @@ Add reference lines
  plt +  
   geom_hline(yintercept = 14, lty = 2) +
   annotate('text', x = 14, y = 17, 
-           size = 3, hjust = 1, label = "14 mpn") +
+           size = 3, hjust = 1, label = "14 CFU") +
   
  
   geom_hline(yintercept = 88, lty = 2) +
   annotate('text', x = 14, y = 110, 
-           size = 3, hjust = 1, label = "88 mpn") +
-
-ggsave('figures/months_jitter.pdf', device = cairo_pdf, 
-       width = 5, height = 4)
+           size = 3, hjust = 1, label = "88 CFU")
 ```
 
 <img src="shellfish_bacteria_graphics_files/figure-gfm/month_emms_add_ref_lines-1.png" style="display: block; margin: auto;" />
+
+``` r
+#ggsave('figures/months_jitter.pdf', device = cairo_pdf, 
+#       width = 5, height = 4)
+```
 
 ### Violin Plot Version
 
@@ -808,8 +816,8 @@ plt <- ggplot(emms4, aes(Month, geom_mean)) +
   scale_color_manual(values = cbep_colors(), name = '', 
                      labels = c('Observed', 'Below Detection')) +
   
-  ylab(expression(atop(italic('E. coli') ~ ' Concentration',
-                  '(CFU / 100ml, MPN)'))) +
+  ylab(expression(atop(italic('E. coli'),
+                  '(CFU / 100ml)'))) +
   xlab('DMR Growing Area') +
   
   theme_cbep(base_size = 12) +
@@ -820,19 +828,21 @@ plt <- ggplot(emms4, aes(Month, geom_mean)) +
  plt +  
   geom_hline(yintercept = 14, lty = 2) +
   annotate('text', x = 14, y = 17, 
-           size = 3, hjust = 1, label = "14 mpn") +
+           size = 3, hjust = 1, label = "14 CFU") +
   
  
   geom_hline(yintercept = 88, lty = 2) +
   annotate('text', x = 14, y = 110, 
-           size = 3, hjust = 1, label = "88 mpn") +
-
-
-ggsave('figures/month_violin.pdf', device = cairo_pdf, 
-       width = 5, height = 4)
+           size = 3, hjust = 1, label = "88 CFU")
 ```
 
 <img src="shellfish_bacteria_graphics_files/figure-gfm/grow_month_add_ref_lines-1.png" style="display: block; margin: auto;" />
+
+``` r
+
+#ggsave('figures/month_violin.pdf', device = cairo_pdf, 
+#       width = 5, height = 4)
+```
 
 ## Full Seasonal (DOY) GAM Model
 
@@ -861,10 +871,9 @@ emms5 <- summary(emmeans(doy_gam,
 
 ``` r
 plt <- ggplot(emms5, aes(DOY, geom_mean)) + 
-  geom_jitter(data = coli_data, mapping = aes(x = DOY, 
+  geom_point(data = coli_data, mapping = aes(x = DOY, 
                                              y = ColiVal,
               color = LCFlag),
-              height = 0.05, width = 0.4,
               alpha = 0.25) +
   geom_line(aes(x = as.numeric(DOY)), color = 'red', size = 1) +
   geom_linerange(aes(ymin = lower.CL, ymax = upper.CL),
@@ -878,9 +887,9 @@ plt <- ggplot(emms5, aes(DOY, geom_mean)) +
                                 181, 212, 243, 273, 304, 334),
                      labels = month.abb) +
   
-  ylab(expression(atop(italic('E. coli') ~ ' Concentration',
-                  '(CFU / 100ml, MPN)'))) +
-  xlab('Day of the Year') +
+  ylab(expression(atop(italic('E. coli'),
+                  '(CFU / 100ml)'))) +
+  xlab('') +
   
   theme_cbep(base_size = 12) +
   theme(legend.position = 'bottom') +
@@ -895,14 +904,16 @@ Add reference lines
  plt +  
   geom_hline(yintercept = 14, lty = 2) +
   annotate('text', x = 415, y = 17, 
-           size = 3, hjust = 1, label = "14 mpn") +
+           size = 3, hjust = 1, label = "14 CFU") +
 
   geom_hline(yintercept = 88, lty = 2) +
   annotate('text', x = 415, y = 110, 
-           size = 3, hjust = 1, label = "88 mpn") +
-
-ggsave('figures/doy_jitter.pdf', device = cairo_pdf, 
-       width = 5, height = 4)
+           size = 3, hjust = 1, label = "88 CFU")
 ```
 
 <img src="shellfish_bacteria_graphics_files/figure-gfm/doy_emms_add_ref_lines-1.png" style="display: block; margin: auto;" />
+
+``` r
+ggsave('figures/doy_point.pdf', device = cairo_pdf, 
+       width = 5, height = 4)
+```
