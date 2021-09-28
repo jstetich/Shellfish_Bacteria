@@ -274,7 +274,7 @@ plt +
            hjust = 0,
            size = 1.75, 
            color = cbep_colors()[6]) +
-  annotate('text', x = 3, y = 17.5, label = 'DMP Geometric Mean threshold, 14 CFU',
+  annotate('text', x = 3, y = 17.5, label = 'DMR Geometric Mean threshold, 14 CFU',
            hjust = 0,
            size = 1.75, 
            color = cbep_colors()[4])
@@ -353,7 +353,7 @@ plt +
            hjust = 0,
            size = 1.75, 
            color = cbep_colors()[6]) +
-  annotate('text', x = 3, y = 17.5, label = 'DMP Geometric Mean threshold, 14 CFU',
+  annotate('text', x = 3, y = 17.5, label = 'DMR Geometric Mean threshold, 14 CFU',
            hjust = 0,
            size = 1.75, 
            color = cbep_colors()[4])
